@@ -10,7 +10,7 @@ import RecipeSlideModal from '@/components/RecipeSlideModal';
 import ChatMessageList from '@/components/ChatMessageList';
 import ChatInput from '@/components/ChatInput';
 import NotificationCard from '@/components/NotificationCard';
-import { Note, Message, Notification } from '@/types';
+import { Note, Message, Notification, ReceiptAnalysisResult } from '@/types';
 
 type Tab = 'input' | 'chat' | 'notifications';
 
@@ -364,6 +364,33 @@ export default function Home() {
     setSelectedNote(newNote);
   };
 
+  // レシート解析結果処理
+  const handleReceiptAnalysis = (result: ReceiptAnalysisResult, imageUrl: string) => {
+    // 食材リストをテキスト形式に整形
+    const ingredientsList = result.ingredients.length > 0
+      ? result.ingredients.map(item => `- ${item}`).join('\n')
+      : '食材が読み取れませんでした';
+
+    // ノートのテキストを作成
+    let noteText = 'レシート読み取り結果\n\n';
+
+    noteText += '\n【購入した食材】\n' + ingredientsList;
+
+    // 新しいノートを作成
+    const newNote: Note = {
+      id: Date.now().toString(),
+      text: noteText,
+      images: [imageUrl],
+      updatedAt: new Date(),
+    };
+
+    // ノートリストの先頭に追加
+    setNotes([newNote, ...notes]);
+
+    // 作成したノートを開く
+    setSelectedNote(newNote);
+  };
+
   // ノート更新処理
   const handleUpdateNote = (id: string, text: string) => {
     const updatedNotes = notes.map((note) =>
@@ -444,6 +471,7 @@ export default function Home() {
           <CreateNoteButtons
             onImageSelect={handleAddNoteWithImage}
             onTextNoteCreate={handleCreateTextNote}
+            onReceiptAnalysis={handleReceiptAnalysis}
           />
         </>
       )}
