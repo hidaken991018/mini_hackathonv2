@@ -158,3 +158,10 @@ vite.config.ts.timestamp-*
 
 # Next.js specific
 next-env.d.ts
+
+# Claude Code
+.claude/
+
+# SQLite database
+*.db
+*.db-journal

@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ユーザー
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  inventories   Inventory[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// 食材在庫
+model Inventory {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  name          String
+  quantityValue Float?    @map("quantity_value")
+  quantityUnit  String?   @map("quantity_unit")
+  note          String?
+  imageUrl      String?   @map("image_url")
+  expireDate    DateTime? @map("expire_date")
+  consumeBy     DateTime? @map("consume_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user              User               @relation(fields: [userId], references: [id])
+  notifications     Notification[]
+  recipeIngredients RecipeIngredient[]
+
+  @@index([userId, updatedAt(sort: Desc)], name: "inventories_user_updated_at_idx")
+  @@index([expireDate], name: "inventories_expire_date_idx")
+  @@index([consumeBy], name: "inventories_consume_by_idx")
+  @@map("inventories")
+}
+
+// 通知
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  type        String // recipe / expiry / reminder 等
+  title       String
+  body        String
+  imageUrl    String?   @map("image_url")
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  recipeId    String?   @map("recipe_id")
+  inventoryId String?   @map("inventory_id")
+  expiryKind  String?   @map("expiry_kind") // best_before / use_by
+  expiryDate  DateTime? @map("expiry_date")
+
+  user      User       @relation(fields: [userId], references: [id])
+  recipe    Recipe?    @relation(fields: [recipeId], references: [id])
+  inventory Inventory? @relation(fields: [inventoryId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)], name: "notifications_user_created_at_idx")
+  @@index([userId, readAt], name: "notifications_user_read_at_idx")
+  @@index([userId, type], name: "notifications_user_type_idx")
+  @@map("notifications")
+}
+
+// レシピ
+model Recipe {
+  id          String   @id @default(uuid())
+  title       String
+  imageUrl    String?  @map("image_url")
+  cookingTime String?  @map("cooking_time")
+  servings    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  notifications Notification[]
+  ingredients   RecipeIngredient[]
+  steps         RecipeStep[]
+
+  @@map("recipes")
+}
+
+// レシピ材料
+model RecipeIngredient {
+  id            String  @id @default(uuid())
+  recipeId      String  @map("recipe_id")
+  inventoryId   String? @map("inventory_id")
+  name          String
+  quantityValue Float?  @map("quantity_value")
+  quantityUnit  String? @map("quantity_unit")
+  sortOrder     Int     @map("sort_order")
+
+  recipe    Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  inventory Inventory? @relation(fields: [inventoryId], references: [id])
+
+  @@index([recipeId, sortOrder], name: "recipe_ingredients_recipe_id_idx")
+  @@map("recipe_ingredients")
+}
+
+// レシピ手順
+model RecipeStep {
+  id          String @id @default(uuid())
+  recipeId    String @map("recipe_id")
+  stepNumber  Int    @map("step_number")
+  instruction String
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId, stepNumber], name: "recipe_steps_recipe_id_idx")
+  @@map("recipe_steps")
+}
