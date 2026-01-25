@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       image: notification.imageUrl,
       createdAt: notification.createdAt.toISOString(),
       readAt: notification.readAt ? notification.readAt.toISOString() : null,
+      recipeId: notification.recipeId ?? undefined,
       recipe: notification.recipe
         ? {
             ingredients: notification.recipe.ingredients.map((ingredient) =>

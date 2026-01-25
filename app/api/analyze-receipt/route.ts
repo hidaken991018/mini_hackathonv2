@@ -46,23 +46,21 @@ export async function POST(request: NextRequest) {
                   quantityValue: {
                     type: SchemaType.NUMBER,
                     description: '数量の数値部分（例: 6個なら6）',
-                    nullable: false,
+                    nullable: true,
                   },
                   quantityUnit: {
                     type: SchemaType.STRING,
                     description: '数量の単位（例: 個、パック、ml、g）',
-                    nullable: false,
+                    nullable: true,
                   },
                   expireDate: {
                     type: SchemaType.STRING,
-                    description:
-                      '賞味期限（YYYY-MM-DD形式）。レシートに記載がある場合のみ。',
+                    description: '賞味期限（YYYY-MM-DD形式）。推論する。',
                     nullable: false,
                   },
                   consumeBy: {
                     type: SchemaType.STRING,
-                    description:
-                      '消費期限（YYYY-MM-DD形式）。レシートに記載がある場合のみ。',
+                    description: '消費期限（YYYY-MM-DD形式）。推論する。',
                     nullable: false,
                   },
                 },
