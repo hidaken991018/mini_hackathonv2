@@ -2,6 +2,9 @@
   "name": "mini-hackathon",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

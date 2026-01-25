@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
 import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import NoteCard from '@/components/NoteCard';
@@ -30,6 +30,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('input');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
+
+  const USER_ID = 'mock-user-001';
 
   // Input画面の状態
   const [notes, setNotes] = useState<Note[]>([
@@ -351,6 +354,33 @@ export default function Home() {
       readAt: null,
     },
   ]);
+
+  useEffect(() => {
+    if (activeTab !== 'notifications' || hasLoadedNotifications) return;
+
+    const loadNotifications = async () => {
+      try {
+        const res = await fetch(`/api/notifications?userId=${USER_ID}`);
+        if (!res.ok) return;
+
+        const payload = await res.json();
+        if (!payload?.success || !Array.isArray(payload.data)) return;
+
+        const mapped = payload.data.map((notif: any) => ({
+          ...notif,
+          createdAt: new Date(notif.createdAt),
+          readAt: notif.readAt ? new Date(notif.readAt) : null,
+        }));
+
+        setNotifications(mapped);
+        setHasLoadedNotifications(true);
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    };
+
+    loadNotifications();
+  }, [activeTab, hasLoadedNotifications]);
 
   // ノート追加処理（画像付き）
   const handleAddNoteWithImage = (imageUrl: string) => {
