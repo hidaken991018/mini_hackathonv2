@@ -30,3 +30,10 @@ export type Notification = {
     servings?: string;
   };
 };
+
+// レシート解析結果の型
+export type ReceiptAnalysisResult = {
+  ingredients: string[];  // 抽出された食材リスト
+  totalAmount?: number;   // 合計金額（あれば）
+  storeName?: string;     // 店舗名（あれば）
+};
