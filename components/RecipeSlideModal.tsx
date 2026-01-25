@@ -1,7 +1,8 @@
 'use client';
 
-import { Notification, Message } from '@/types';
-import { useEffect, useState, useRef } from 'react';
+import { Notification } from '@/types';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 // デフォルトユーザーID（認証実装前の暫定対応）
@@ -20,10 +21,7 @@ export default function RecipeSlideModal({
   onMarkAsRead,
   onCookComplete,
 }: RecipeSlideModalProps) {
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 調理機能の状態
   const [showCookConfirm, setShowCookConfirm] = useState(false);
@@ -36,32 +34,13 @@ export default function RecipeSlideModal({
       if (notification.readAt === null) {
         onMarkAsRead(notification.id);
       }
-      // レシピ用の初期メッセージを設定
-      if (notification.recipe && chatMessages.length === 0) {
-        setChatMessages([
-          {
-            id: '1',
-            role: 'assistant',
-            content: `「${notification.title}」のレシピについて、何か質問や相談があればお気軽にどうぞ！\n\n例えば：\n- 材料の代用について\n- 調理のコツ\n- アレンジ方法\nなど、お手伝いします。`,
-          },
-        ]);
-      }
     } else {
       document.body.style.overflow = 'unset';
-      setShowChat(false);
-      setChatMessages([]);
-      setChatInput('');
     }
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [notification, onMarkAsRead]);
-
-  useEffect(() => {
-    if (showChat) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages, showChat]);
 
   // モーダルが閉じられたときに調理確認もリセット
   useEffect(() => {
@@ -74,13 +53,8 @@ export default function RecipeSlideModal({
   // 調理実行処理
   const handleCook = async () => {
     if (!notification || !notification.recipeId) {
-      // recipeIdがない場合はデモとして処理
-      setIsCooking(true);
-      setTimeout(() => {
-        setIsCooking(false);
-        setShowCookConfirm(false);
-        alert('調理を完了しました！（デモ）');
-      }, 1000);
+      alert('レシピ情報が不足しているため、調理処理を実行できません。');
+      setShowCookConfirm(false);
       return;
     }
 
@@ -111,28 +85,6 @@ export default function RecipeSlideModal({
     }
   };
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim() || !notification) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: chatInput,
-    };
-    setChatMessages((prev) => [...prev, userMessage]);
-    setChatInput('');
-
-    // 0.6秒後にダミーAI返信
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'なるほど、その質問についてお答えしますね。このレシピでは、特に火加減に注意するとより美味しく作れます。具体的には、弱火でじっくり炒めることで、食材の旨味が引き立ちます。',
-      };
-      setChatMessages((prev) => [...prev, aiMessage]);
-    }, 600);
-  };
-
   if (!notification) return null;
 
   const formatDate = (date: Date) => {
@@ -156,15 +108,11 @@ export default function RecipeSlideModal({
         onClick={onClose}
       />
       <div
-        className={`relative bg-white overflow-hidden shadow-2xl ${
-          showChat
-            ? 'w-full h-full flex rounded-none'
-            : 'w-full max-h-[90vh] rounded-t-3xl animate-slide-up'
-        }`}
+        className="relative bg-white overflow-hidden shadow-2xl w-full max-h-[90vh] rounded-t-3xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* レシピパネル */}
-        <div className={showChat ? 'w-1/2 flex flex-col' : 'w-full'}>
+        <div className="w-full">
           {/* ヘッダー画像 */}
           {notification.image && (
             <div className="relative h-64 bg-gray-100 flex-shrink-0">
@@ -174,46 +122,13 @@ export default function RecipeSlideModal({
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              {!showChat && (
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
-                  aria-label="閉じる"
-                >
-                  <svg
-                    className="w-5 h-5 text-gray-900"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-              <div className="absolute bottom-4 left-4 right-4">
-                <h2 className="text-2xl font-bold text-white mb-1">
-                  {notification.title}
-                </h2>
-                <p className="text-white/90 text-sm">{notification.body}</p>
-              </div>
-            </div>
-          )}
-
-          {/* チャット表示時の閉じるボタン */}
-          {showChat && (
-            <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end flex-shrink-0">
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
                 aria-label="閉じる"
               >
                 <svg
-                  className="w-5 h-5 text-gray-600"
+                  className="w-5 h-5 text-gray-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -226,15 +141,17 @@ export default function RecipeSlideModal({
                   />
                 </svg>
               </button>
+              <div className="absolute bottom-4 left-4 right-4">
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  {notification.title}
+                </h2>
+                <p className="text-white/90 text-sm">{notification.body}</p>
+              </div>
             </div>
           )}
 
           {/* レシピコンテンツ */}
-          <div
-            className={`overflow-y-auto px-6 py-6 flex-1 ${
-              showChat ? 'border-r border-gray-200' : 'max-h-[calc(90vh-256px)]'
-            }`}
-          >
+          <div className="overflow-y-auto px-6 py-6 flex-1 max-h-[calc(90vh-256px)]">
           {notification.recipe ? (
             <>
               {/* レシピ情報 */}
@@ -326,10 +243,15 @@ export default function RecipeSlideModal({
               )}
 
               {/* 調理ボタン */}
-              <div className="mt-6 pt-4 border-t border-gray-100">
+              <div className="mt-6 pt-4 border-t border-gray-100 space-y-3">
                 <button
                   onClick={() => setShowCookConfirm(true)}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  disabled={!notification.recipeId}
+                  className={`w-full py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                    notification.recipeId
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98]'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -346,6 +268,11 @@ export default function RecipeSlideModal({
                   </svg>
                   この料理を作る
                 </button>
+                {!notification.recipeId && (
+                  <p className="text-xs text-gray-400 text-center">
+                    このレシピは調理機能に対応していません
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -363,105 +290,20 @@ export default function RecipeSlideModal({
           </div>
         </div>
 
-        {/* AIチャットパネル */}
-        {showChat && (
-          <div className="w-1/2 flex flex-col bg-gray-50 h-full">
-            {/* チャットヘッダー */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">AI レシピアシスタント</h3>
-              <button
-                onClick={() => setShowChat(false)}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
-                aria-label="チャットを閉じる"
-              >
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* メッセージリスト */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
-                      message.role === 'user'
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-white text-gray-900 border border-gray-100'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {message.content}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* チャット入力 */}
-            <div className="bg-white border-t border-gray-200 px-4 py-3">
-              <div className="flex items-end gap-2">
-                <textarea
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="レシピについて質問..."
-                  className="flex-1 min-h-[44px] max-h-32 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl resize-none outline-none focus:border-gray-300 focus:ring-2 focus:ring-gray-100 text-gray-900 placeholder-gray-400 text-sm"
-                  rows={1}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!chatInput.trim()}
-                  className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors"
-                  aria-label="送信"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* AIチャットボタン（右下） */}
-        {!showChat && notification.recipe && (
+        {notification.recipe && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setShowChat(true);
+              // レシピ情報をローカルストレージに保存
+              const initialMessage = {
+                id: '1',
+                role: 'assistant' as const,
+                content: `「${notification.title}」のレシピについて、何か質問や相談があればお気軽にどうぞ！\n\n例えば：\n- 材料の代用について\n- 調理のコツ\n- アレンジ方法\nなど、お手伝いします。`,
+              };
+              localStorage.setItem('chatInitialMessage', JSON.stringify(initialMessage));
+              // /chatページに遷移
+              router.push('/chat');
             }}
             className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center shadow-xl hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
             aria-label="AIチャットを開く"

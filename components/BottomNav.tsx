@@ -1,18 +1,26 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 type Tab = 'input' | 'chat' | 'notifications';
 
-interface BottomNavProps {
-  activeTab: Tab;
-  onTabChange: (tab: Tab) => void;
-}
+export default function BottomNav() {
+  const pathname = usePathname();
 
-export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+  const getActiveTab = (): Tab => {
+    if (pathname === '/chat') return 'chat';
+    if (pathname === '/notifications') return 'notifications';
+    return 'input';
+  };
+
+  const activeTab = getActiveTab();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-lg">
       <div className="flex justify-around items-center h-16">
-        <button
-          onClick={() => onTabChange('input')}
+        <Link
+          href="/input"
           className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
             activeTab === 'input' ? 'text-gray-900' : 'text-gray-400'
           }`}
@@ -31,10 +39,10 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             />
           </svg>
           <span className="text-xs">Input</span>
-        </button>
+        </Link>
 
-        <button
-          onClick={() => onTabChange('chat')}
+        <Link
+          href="/chat"
           className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
             activeTab === 'chat' ? 'text-gray-900' : 'text-gray-400'
           }`}
@@ -53,10 +61,10 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             />
           </svg>
           <span className="text-xs">AI Chat</span>
-        </button>
+        </Link>
 
-        <button
-          onClick={() => onTabChange('notifications')}
+        <Link
+          href="/notifications"
           className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
             activeTab === 'notifications' ? 'text-gray-900' : 'text-gray-400'
           }`}
@@ -75,7 +83,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             />
           </svg>
           <span className="text-xs">Notifications</span>
-        </button>
+        </Link>
       </div>
     </nav>
   );
