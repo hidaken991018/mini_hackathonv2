@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import axios from 'axios';
 import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import NoteCard from '@/components/NoteCard';
@@ -10,9 +11,20 @@ import RecipeSlideModal from '@/components/RecipeSlideModal';
 import ChatMessageList from '@/components/ChatMessageList';
 import ChatInput from '@/components/ChatInput';
 import NotificationCard from '@/components/NotificationCard';
-import { Note, Message, Notification, ReceiptAnalysisResult } from '@/types';
+import { Note, Message, Notification, ReceiptAnalysisResult, InventoryItem } from '@/types';
 
 type Tab = 'input' | 'chat' | 'notifications';
+
+// デフォルトユーザーID（認証実装前の暫定対応）
+const DEFAULT_USER_ID = 'mock-user-001';
+
+// 在庫アイテムの型（ローカル状態用）
+type LocalInventory = {
+  id: string;
+  name: string;
+  quantityValue?: number;
+  quantityUnit?: string;
+};
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('input');
@@ -387,8 +399,7 @@ export default function Home() {
     // ノートリストの先頭に追加
     setNotes([newNote, ...notes]);
 
-    // 作成したノートを開く
-    setSelectedNote(newNote);
+    // 在庫登録プレビューモーダルのみ表示（NoteDetailModalは開かない）
   };
 
   // ノート更新処理
@@ -426,22 +437,56 @@ export default function Home() {
     }, 600);
   };
 
-  // 通知既読処理
-  const handleMarkAsRead = (id: string) => {
+  // 在庫状態
+  const [inventories, setInventories] = useState<LocalInventory[]>([]);
+
+  // 通知既読処理（楽観的更新 + API呼び出し）
+  const handleMarkAsRead = async (id: string) => {
+    // 楽観的更新：即座にUI反映
     setNotifications(
       notifications.map((notif) =>
         notif.id === id ? { ...notif, readAt: new Date() } : notif
       )
     );
+
+    // バックグラウンドでAPI呼び出し
+    try {
+      await axios.patch(`/api/notifications/${id}/read`);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // エラー時はUI更新をロールバックしない（ユーザー体験優先）
+    }
   };
 
-  // 全て既読処理
-  const handleMarkAllAsRead = () => {
+  // 全て既読処理（楽観的更新 + API呼び出し）
+  const handleMarkAllAsRead = async () => {
+    // 楽観的更新：即座にUI反映
     setNotifications(
       notifications.map((notif) =>
         notif.readAt === null ? { ...notif, readAt: new Date() } : notif
       )
     );
+
+    // バックグラウンドでAPI呼び出し
+    try {
+      await axios.patch('/api/notifications/read-all', {
+        userId: DEFAULT_USER_ID,
+      });
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  };
+
+  // レシピ調理完了処理（在庫削減後のローカル状態更新）
+  const handleCookComplete = (deletedInventoryIds: string[]) => {
+    setInventories((prev) =>
+      prev.filter((inv) => !deletedInventoryIds.includes(inv.id))
+    );
+  };
+
+  // 在庫登録成功時のローカル状態更新
+  const handleInventoryRegistered = (newItems: LocalInventory[]) => {
+    setInventories((prev) => [...prev, ...newItems]);
   };
 
   return (
@@ -472,6 +517,7 @@ export default function Home() {
             onImageSelect={handleAddNoteWithImage}
             onTextNoteCreate={handleCreateTextNote}
             onReceiptAnalysis={handleReceiptAnalysis}
+            onInventoryRegistered={handleInventoryRegistered}
           />
         </>
       )}
@@ -539,6 +585,7 @@ export default function Home() {
         notification={selectedNotification}
         onClose={() => setSelectedNotification(null)}
         onMarkAsRead={handleMarkAsRead}
+        onCookComplete={handleCookComplete}
       />
     </div>
   );
