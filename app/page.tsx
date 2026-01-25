@@ -373,16 +373,8 @@ export default function Home() {
 
     // ノートのテキストを作成
     let noteText = 'レシート読み取り結果\n\n';
-    
-    if (result.storeName) {
-      noteText += `店舗: ${result.storeName}\n`;
-    }
-    
+
     noteText += '\n【購入した食材】\n' + ingredientsList;
-    
-    if (result.totalAmount) {
-      noteText += `\n\n合計金額: ${result.totalAmount.toLocaleString()}円`;
-    }
 
     // 新しいノートを作成
     const newNote: Note = {

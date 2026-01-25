@@ -37,17 +37,7 @@ export async function POST(request: NextRequest) {
             ingredients: {
               type: SchemaType.ARRAY,
               items: { type: SchemaType.STRING },
-              description: 'レシートから抽出された食材・食品名のリスト（価格や数量は含めない）',
-            },
-            totalAmount: {
-              type: SchemaType.NUMBER,
-              description: 'レシートの合計金額（不明な場合はnull）',
-              nullable: true,
-            },
-            storeName: {
-              type: SchemaType.STRING,
-              description: '店舗名（不明な場合はnull）',
-              nullable: true,
+              description: 'レシートから抽出された食材・食品名のリスト（価格は含めない。個数で記載されるものは数量を含める）',
             },
           },
           required: ['ingredients'],
@@ -70,7 +60,9 @@ export async function POST(request: NextRequest) {
     // プロンプト：レシートから食材を抽出するよう指示
     // スキーマで出力形式を保証しているため、プロンプトはシンプルに
     const prompt = `このレシート画像を解析して、購入された食材・食品を抽出してください。
-食材名のみを抽出し、価格や数量は含めないでください。
+価格や合計金額、店舗名は含めないでください。
+卵・りんごなど個数で記載されるものは、数量も含めて「卵 6個」「りんご 3個」のように出力してください。
+数量以外の金額は出力しないでください。
 レシートでない場合や読み取れない場合は、ingredientsを空配列にしてください。`;
 
     // Gemini APIに送信（構造化出力を使用）
@@ -88,8 +80,6 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           ingredients: analysisResult.ingredients || [],
-          totalAmount: analysisResult.totalAmount ?? null,
-          storeName: analysisResult.storeName ?? null,
         },
       });
     } catch (parseError) {
