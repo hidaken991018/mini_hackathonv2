@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Gemini APIクライアントの初期化
@@ -25,7 +25,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Gemini 2.0 Flash モデルを使用（画像解析に対応、最新版）
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    // 構造化出力（Structured Output）を使用してJSON形式を保証
+    // 参考: https://ai.google.dev/gemini-api/docs/structured-output?hl=ja
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            ingredients: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING },
+              description: 'レシートから抽出された食材・食品名のリスト（価格や数量は含めない）',
+            },
+            totalAmount: {
+              type: SchemaType.NUMBER,
+              description: 'レシートの合計金額（不明な場合はnull）',
+              nullable: true,
+            },
+            storeName: {
+              type: SchemaType.STRING,
+              description: '店舗名（不明な場合はnull）',
+              nullable: true,
+            },
+          },
+          required: ['ingredients'],
+        },
+      },
+    });
 
     // Base64データからプレフィックスを除去
     // 例: "data:image/jpeg;base64,/9j/4AAQ..." → "/9j/4AAQ..."
@@ -40,49 +68,32 @@ export async function POST(request: NextRequest) {
     };
 
     // プロンプト：レシートから食材を抽出するよう指示
+    // スキーマで出力形式を保証しているため、プロンプトはシンプルに
     const prompt = `このレシート画像を解析して、購入された食材・食品を抽出してください。
+食材名のみを抽出し、価格や数量は含めないでください。
+レシートでない場合や読み取れない場合は、ingredientsを空配列にしてください。`;
 
-以下のJSON形式で回答してください。必ず有効なJSONのみを返してください（説明文は不要です）：
-
-{
-  "ingredients": ["食材1", "食材2", "食材3"],
-  "totalAmount": 1234,
-  "storeName": "店舗名"
-}
-
-注意事項：
-- ingredients には食材・食品名のみを配列で入れてください
-- 価格、数量、税などは ingredients に含めないでください
-- totalAmount は合計金額を数値で入れてください（不明な場合は null）
-- storeName は店舗名を入れてください（不明な場合は null）
-- レシートでない場合や食材が読み取れない場合は、ingredients を空配列 [] にしてください`;
-
-    // Gemini APIに送信
+    // Gemini APIに送信（構造化出力を使用）
+    // responseMimeType: 'application/json' により、JSON形式で返される
     const result = await model.generateContent([prompt, imagePart]);
+    
     const response = await result.response;
     const text = response.text();
 
-    // JSONをパース
-    // Geminiの応答からJSONを抽出（```json ... ``` で囲まれている場合にも対応）
-    let jsonText = text;
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      jsonText = jsonMatch[1];
-    }
-
+    // 構造化出力により、text()は既にJSON文字列として返される
     try {
-      const analysisResult = JSON.parse(jsonText);
+      const analysisResult = JSON.parse(text);
       
       return NextResponse.json({
         success: true,
         data: {
           ingredients: analysisResult.ingredients || [],
-          totalAmount: analysisResult.totalAmount || null,
-          storeName: analysisResult.storeName || null,
+          totalAmount: analysisResult.totalAmount ?? null,
+          storeName: analysisResult.storeName ?? null,
         },
       });
     } catch (parseError) {
-      // JSONパースに失敗した場合
+      // JSONパースに失敗した場合（通常は発生しないはず）
       console.error('JSON parse error:', parseError);
       console.error('Raw response:', text);
       
