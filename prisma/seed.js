@@ -1,13 +1,12 @@
-import { PrismaClient } from '@prisma/client'
+const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
 async function main() {
   const now = new Date()
-  const addDays = (base: Date, days: number) =>
+  const addDays = (base, days) =>
     new Date(base.getTime() + days * 24 * 60 * 60 * 1000)
 
-  // モックユーザーを作成
   const user = await prisma.user.upsert({
     where: { id: 'mock-user-001' },
     update: {},
@@ -19,7 +18,6 @@ async function main() {
 
   console.log('Created mock user:', user)
 
-  // 在庫データ（テスト用）
   const inventories = [
     {
       id: 'inv-tomato-001',
