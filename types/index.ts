@@ -23,6 +23,7 @@ export type Notification = {
   image?: string;
   createdAt: Date;
   readAt: Date | null;
+  recipeId?: string; // DB参照用レシピID
   recipe?: {
     ingredients: string[];
     steps: RecipeStep[];
@@ -31,7 +32,18 @@ export type Notification = {
   };
 };
 
-// レシート解析結果の型
+// 在庫アイテムの型
+export type InventoryItem = {
+  name: string;
+  quantityValue?: number;
+  quantityUnit?: string;
+  expireDate?: string;
+  consumeBy?: string;
+  note?: string;
+};
+
+// レシート解析結果の型（拡張版）
 export type ReceiptAnalysisResult = {
-  ingredients: string[];  // 抽出された食材リスト
+  ingredients: string[];  // 抽出された食材リスト（後方互換性のため維持）
+  items: InventoryItem[]; // 構造化された在庫アイテム
 };
