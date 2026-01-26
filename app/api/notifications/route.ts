@@ -1,17 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const formatIngredient = (name: string, quantityValue: number | null, quantityUnit: string | null) => {
-  if (quantityValue === null && !quantityUnit) return name
-  if (quantityValue === null && quantityUnit) return `${name} ${quantityUnit}`
-  if (quantityUnit) return `${name} ${quantityValue}${quantityUnit}`
-  return `${name} ${quantityValue}`
-}
+export const dynamic = 'force-dynamic';
+
+const formatIngredient = (
+  name: string,
+  quantityValue: number | null,
+  quantityUnit: string | null,
+) => {
+  if (quantityValue === null && !quantityUnit) return name;
+  if (quantityValue === null && quantityUnit) return `${name} ${quantityUnit}`;
+  if (quantityUnit) return `${name} ${quantityValue}${quantityUnit}`;
+  return `${name} ${quantityValue}`;
+};
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = request.nextUrl.searchParams.get('userId');
 
     if (!userId) {
       return NextResponse.json(
