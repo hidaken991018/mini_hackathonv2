@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'
+
 // Gemini APIクライアントの初期化
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
