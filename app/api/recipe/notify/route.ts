@@ -11,6 +11,18 @@ type GeneratedIngredient = {
 type GeneratedStep = {
   step: number
   instruction: string
+export const dynamic = 'force-dynamic'
+
+type Candidate = {
+  recipe: {
+    id: string
+    title: string
+    ingredients: { name: string }[]
+  }
+  matchedIngredientCount: number
+  matchedInventoryNames: string[]
+  closestDate: Date | null
+  score: number
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
