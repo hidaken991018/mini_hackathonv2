@@ -20,6 +20,48 @@ async function main() {
 
   const inventories = [
     {
+      id: 'inv-expiry-0',
+      name: '期限テスト（賞味期限:当日）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      expireDate: addDays(now, 0),
+    },
+    {
+      id: 'inv-expiry-3',
+      name: '期限テスト（賞味期限:3日前）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      expireDate: addDays(now, 3),
+    },
+    {
+      id: 'inv-expiry-7',
+      name: '期限テスト（賞味期限:7日前）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      expireDate: addDays(now, 7),
+    },
+    {
+      id: 'inv-useby-0',
+      name: '期限テスト（消費期限:当日）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      consumeBy: addDays(now, 0),
+    },
+    {
+      id: 'inv-useby-1',
+      name: '期限テスト（消費期限:前日）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      consumeBy: addDays(now, 1),
+    },
+    {
+      id: 'inv-useby-3',
+      name: '期限テスト（消費期限:3日前）',
+      quantityValue: 1,
+      quantityUnit: '個',
+      consumeBy: addDays(now, 3),
+    },
+    {
       id: 'inv-tomato-001',
       name: 'トマト',
       quantityValue: 2,
@@ -77,6 +119,7 @@ async function main() {
         name: inv.name,
         quantityValue: inv.quantityValue,
         quantityUnit: inv.quantityUnit,
+        expireDate: inv.expireDate,
         consumeBy: inv.consumeBy,
       },
       create: {
@@ -85,6 +128,7 @@ async function main() {
         name: inv.name,
         quantityValue: inv.quantityValue,
         quantityUnit: inv.quantityUnit,
+        expireDate: inv.expireDate,
         consumeBy: inv.consumeBy,
       },
     })
