@@ -7,6 +7,7 @@
 ## 期限通知の生成API（手動）
 **Method**: `POST`  
 **Path**: `/api/notifications/expiry`  
+**Auth**: `x-notify-secret` ヘッダー必須  
 **Body**:
 ```json
 { "userId": "mock-user-001" }
@@ -29,6 +30,10 @@
 { "success": true, "data": { "createdCount": 2 } }
 ```
 
+### 認証（必須）
+- 環境変数 `NOTIFY_SECRET` を設定する
+- APIリクエストに `x-notify-secret: <NOTIFY_SECRET>` を付与する
+
 ## 通知一覧の取得API（画面表示）
 **Method**: `GET`  
 **Path**: `/api/notifications?userId=mock-user-001`  
@@ -41,3 +46,7 @@
 - 全ユーザー対象の一括実行に拡張
 - 認証/安全対策（管理者専用 or シークレット）
 - 失敗時のリトライ/監視
+
+## 運用方針（当面の進め方）
+- まずはVercel上で「本番相当の動作確認」を行う
+- インフラが決まり次第、API配置先と自動実行を移行する

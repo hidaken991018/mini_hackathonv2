@@ -27,6 +27,22 @@ const buildBody = (name: string, kindLabel: string, date: Date, daysUntil: numbe
 
 export async function POST(request: NextRequest) {
   try {
+    const expectedSecret = process.env.NOTIFY_SECRET;
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { success: false, error: 'NOTIFY_SECRET が設定されていません' },
+        { status: 500 },
+      );
+    }
+
+    const providedSecret = request.headers.get('x-notify-secret');
+    if (providedSecret !== expectedSecret) {
+      return NextResponse.json(
+        { success: false, error: '認証に失敗しました' },
+        { status: 401 },
+      );
+    }
+
     const { userId } = await request.json();
 
     if (!userId || typeof userId !== 'string') {
