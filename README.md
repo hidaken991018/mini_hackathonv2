@@ -17,6 +17,16 @@
   - `GEMINI_API_KEY`
   - `NOTIFY_SECRET`（任意）
 
+  ※`FIREBASE_CLIENT_EMAIL` と `FIREBASE_PRIVATE_KEY` は各自で取得をお願いします（1.1参照）
+
+### 1.1 Firebaseサービスアカウントの取得方法
+1) Firebase Console → 対象プロジェクト → **歯車** → **プロジェクト設定**  
+2) **サービスアカウント** タブを開く  
+3) **新しい秘密鍵を生成** をクリックしてJSONをダウンロード  
+4) JSON内の以下を `.env.local` に設定  
+   - `client_email` → `FIREBASE_CLIENT_EMAIL`  
+   - `private_key` → `FIREBASE_PRIVATE_KEY`（改行は `\n` にする）
+
 
 ### 2. IDトークンの取り方
 1) ブラウザでログインして **Notifications画面**（`/notifications`）を開く  
