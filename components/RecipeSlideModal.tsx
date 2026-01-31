@@ -3,10 +3,7 @@
 import { Notification } from '@/types';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
+import axiosInstance from '@/lib/axios';
 
 interface RecipeSlideModalProps {
   notification: Notification | null;
@@ -61,9 +58,9 @@ export default function RecipeSlideModal({
     setIsCooking(true);
 
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `/api/recipes/${notification.recipeId}/cook`,
-        { userId: DEFAULT_USER_ID }
+        {}
       );
 
       if (response.data.success) {
