@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     const inventoryList = inventories.map(formatInventoryLine).join('\n');
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
