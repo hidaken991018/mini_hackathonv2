@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,14 +17,9 @@ const formatIngredient = (
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId が必要です' },
-        { status: 400 }
-      )
-    }
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
 
     const notifications = await prisma.notification.findMany({
       where: { userId },

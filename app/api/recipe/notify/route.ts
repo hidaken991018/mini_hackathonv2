@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-helpers';
 
 type GeneratedIngredient = {
   name: string;
@@ -81,14 +82,9 @@ const parseJsonFromText = (text: string) => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
-
-    if (!userId || typeof userId !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'userId が必要です' },
-        { status: 400 },
-      );
-    }
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(

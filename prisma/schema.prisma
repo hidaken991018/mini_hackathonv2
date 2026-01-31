@@ -12,10 +12,13 @@ datasource db {
 
 // ユーザー
 model User {
-  id        String   @id @default(uuid())
-  name      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  firebaseUid String?  @unique @map("firebase_uid")  // Firebase UID
+  name        String?
+  email       String?  @unique  // Googleアカウントのメールアドレス
+  image       String?  // Googleアカウントのプロフィール画像URL
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   inventories   Inventory[]
   notifications Notification[]

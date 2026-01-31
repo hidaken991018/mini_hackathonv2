@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import axios from 'axios';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import axiosInstance from '@/lib/axios';
+import { useAuth } from '@/contexts/AuthContext';
 import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import { InventoryItem } from '@/types';
@@ -10,6 +12,23 @@ import { InventoryItem } from '@/types';
 const DEFAULT_USER_ID = 'mock-user-001';
 
 export default function InputPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // ログイン状態確認
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth/signin");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingCount, setAnalyzingCount] = useState(0);
   const [analyzedCount, setAnalyzedCount] = useState(0);
@@ -98,8 +117,7 @@ export default function InputPage() {
     setIsRegistering(true);
 
     try {
-      const response = await axios.post('/api/inventories/bulk', {
-        userId: DEFAULT_USER_ID,
+      const response = await axiosInstance.post('/api/inventories/bulk', {
         items: previewItems,
       });
 
