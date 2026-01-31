@@ -8,27 +8,10 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import { InventoryItem } from '@/types';
 
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
-
 export default function InputPage() {
+  // === すべてのHooksを最上部に配置（Reactのルール） ===
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  // ログイン状態確認
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/auth/signin");
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  if (!user) {
-    return null;
-  }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingCount, setAnalyzingCount] = useState(0);
   const [analyzedCount, setAnalyzedCount] = useState(0);
@@ -37,6 +20,22 @@ export default function InputPage() {
   const [previewItems, setPreviewItems] = useState<InventoryItem[]>([]);
   const [previewImageUrls, setPreviewImageUrls] = useState<string[]>([]);
   const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  // ログイン状態確認
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth/signin");
+    }
+  }, [user, loading, router]);
+
+  // === Hooksの後に早期リターン ===
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   // レシート読み取り
   const handleReceiptClick = () => {

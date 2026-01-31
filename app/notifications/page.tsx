@@ -10,9 +10,6 @@ import RecipeSlideModal from '@/components/RecipeSlideModal';
 import NotificationCard from '@/components/NotificationCard';
 import { Notification } from '@/types';
 
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
-
 // 在庫アイテムの型（ローカル状態用）
 type LocalInventory = {
   id: string;
@@ -83,7 +80,7 @@ export default function NotificationsPage() {
 
     // バックグラウンドでAPI呼び出し
     try {
-      await axios.patch(`/api/notifications/${id}/read`);
+      await axiosInstance.patch(`/api/notifications/${id}/read`);
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
