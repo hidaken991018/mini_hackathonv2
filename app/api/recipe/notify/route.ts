@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { saveBase64Image } from '@/lib/image-storage';
 
 type GeneratedIngredient = {
   name: string;
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
     const inventoryList = inventories.map(formatInventoryLine).join('\n');
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -305,6 +306,72 @@ ${inventoryList}
       },
     });
 
+    // --- 画像生成処理 (Nano BananaPro / Gemini 2.5) ---
+    let generatedImageUrl: string | null = null;
+    try {
+      // ユーザー指定のモデル名
+      const imageModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
+
+      // 画像生成プロンプト
+      const imagePrompt = `
+      Create a high-quality visualization for a recipe titled "${recipeTitle}".
+      The image MUST include two distinct elements combined into one composition:
+      1. A delicious, professional-looking "Completed Image" of the final dish.
+      2. A visual representation of the "Cooking Steps" (e.g., ingredients being prepared or a key cooking moment).
+      
+      Style: Photorealistic, appetizing, bright lighting, high resolution.
+      `;
+
+      // 画像生成実行
+      // 注: 標準的なGeminiの画像生成は通常、generateContentで呼び出します。
+      // レスポンスに画像データが含まれることを期待します。
+      const imageResult = await imageModel.generateContent(imagePrompt);
+      const imageResponse = await imageResult.response;
+      
+      // レスポンスから画像データを抽出
+      // (SDKの仕様に基づき、inlineDataまたはtextに含まれるbase64を探す)
+      // 注意: 現在のSDKバージョンで画像生成がどう返されるか、モデルの実装依存ですが
+      // マニュアル実装として、parts配列からinlineDataを探すか、テキスト内のdata URLを探します。
+      
+      // ケース1: inlineDataとして返される場合 (Imagen on Vertex AIなど)
+      // ケース2: Base64文字列としてテキストで返される場合
+      
+      // まずはpartsを確認
+      let base64Data: string | null = null;
+      if (imageResponse.candidates && imageResponse.candidates[0].content.parts) {
+         for (const part of imageResponse.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+               base64Data = part.inlineData.data;
+               break;
+            }
+         }
+      }
+
+      // partsになければ、テキストとして返ってきている可能性（JSON内など）を考慮
+      // もしくは、画像生成モデルが標準的なgenerateContentではなく、別のメソッドを要求する可能性もありますが、
+      // ここではSDK標準を用います。
+      
+      if (base64Data) {
+        // 保存
+        const savedPath = await saveBase64Image(base64Data);
+        generatedImageUrl = savedPath;
+      } else {
+        console.warn('Image generation response did not contain inlineData.');
+      }
+
+    } catch (imgError) {
+      console.error('Image generation failed:', imgError);
+      // 画像生成失敗しても、レシピ生成自体は成功とする（画像なしで進む）
+    }
+
+    // レシピに画像を更新 (あれば)
+    if (generatedImageUrl) {
+        await prisma.recipe.update({
+            where: { id: recipe.id },
+            data: { imageUrl: generatedImageUrl }
+        });
+    }
+
     const notification = await prisma.notification.create({
       data: {
         userId,
@@ -312,6 +379,7 @@ ${inventoryList}
         title,
         body,
         recipeId: recipe.id,
+        imageUrl: generatedImageUrl, // 通知にも画像を設定
       },
     });
 

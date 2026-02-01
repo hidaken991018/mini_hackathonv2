@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // 構造化出力（Structured Output）を使用してJSON形式を保証
     // 参考: https://ai.google.dev/gemini-api/docs/structured-output?hl=ja
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {

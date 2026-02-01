@@ -1,0 +1,14 @@
+- Safe-chain: Scanning for malicious packages...
+--- Verification Start ---
+User synced: mock-user-001
+Inventory added: 繝医・繝・ 蜊ｵ, 繝吶・繧ｳ繝ｳ
+Calling Notification API...
+API Response Status: 200
+Notification ID: d8fbf744-25ee-4e08-b259-c1713942bbb6
+Recipe Title: 鮓上・縺ｭ閧峨→縺倥ｃ縺後＞繧ゅ・蜻ｳ蝎檎ｒ繧・Generated Image URL: No image URL returned
+Recipe in DB ImageUrl: /images/generated/c1b60a36-025c-4884-95bb-cbab68576963.png
+Notification in DB ImageUrl: /images/generated/c1b60a36-025c-4884-95bb-cbab68576963.png
+Image File Exists at C:\繝溘ル繝上ャ繧ｫ繧ｽ繝ｳ_繝輔か繝ｼ繧ｯ蛻・mini_hackathonv2\public\images\generated\c1b60a36-025c-4884-95bb-cbab68576963.png? true
+SUCCESS: Image generated and saved.
+
+笨・Safe-chain: Command completed, no malicious packages found.
