@@ -20,7 +20,7 @@ type LocalInventory = {
 };
 
 export default function NotificationsPage() {
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
   const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
 
   // Notifications画面の状態
@@ -28,6 +28,10 @@ export default function NotificationsPage() {
 
   // 在庫状態
   const [inventories, setInventories] = useState<LocalInventory[]>([]);
+
+  // 選択された通知（最新の状態を反映するためにIDから検索）
+  const selectedNotification = 
+    notifications.find((n) => n.id === selectedNotificationId) || null;
 
   useEffect(() => {
     if (hasLoadedNotifications) return;
@@ -120,7 +124,7 @@ export default function NotificationsPage() {
                 key={notification.id}
                 notification={notification}
                 onMarkAsRead={() => handleMarkAsRead(notification.id)}
-                onClick={() => setSelectedNotification(notification)}
+                onClick={() => setSelectedNotificationId(notification.id)}
               />
             ))}
           </div>
@@ -132,7 +136,7 @@ export default function NotificationsPage() {
       {/* レシピスライドモーダル */}
       <RecipeSlideModal
         notification={selectedNotification}
-        onClose={() => setSelectedNotification(null)}
+        onClose={() => setSelectedNotificationId(null)}
         onMarkAsRead={handleMarkAsRead}
         onCookComplete={handleCookComplete}
       />

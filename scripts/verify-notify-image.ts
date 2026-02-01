@@ -52,31 +52,34 @@ async function main() {
       const data = res.data.data;
       console.log('Notification ID:', data.notificationId);
       console.log('Recipe Title:', data.title);
-      console.log('Generated Image URL:', data.imageUrl || 'No image URL returned'); // API response might not include imageUrl directly in data root, checking details
+      console.log('Generated Dish Image URL (Notification):', data.imageUrl || 'No image URL returned');
 
       // Check DB for image
       const recipe = await prisma.recipe.findUnique({
         where: { id: data.recipeId },
       });
-      console.log('Recipe in DB ImageUrl:', recipe?.imageUrl);
+      console.log('Recipe in DB Infographic URL:', recipe?.imageUrl);
       
       const notification = await prisma.notification.findUnique({
           where: { id: data.notificationId }
       });
-      console.log('Notification in DB ImageUrl:', notification?.imageUrl);
+      console.log('Notification in DB Dish URL:', notification?.imageUrl);
 
       if (recipe?.imageUrl) {
          const localPath = path.join(process.cwd(), 'public', recipe.imageUrl);
          const exists = fs.existsSync(localPath);
-         console.log(`Image File Exists at ${localPath}?`, exists);
-         if (exists) {
-             console.log('SUCCESS: Image generated and saved.');
-         } else {
-             console.error('FAILURE: Image URL set but file not found.');
-         }
+         console.log(`Infographic File Exists at ${localPath}?`, exists);
       } else {
-          console.warn('WARNING: No image URL generated. Check API logs for Gemini errors.');
+          console.warn('WARNING: No Infographic URL generated.');
       }
+
+      if (notification?.imageUrl) {
+        const localPath = path.join(process.cwd(), 'public', notification.imageUrl);
+        const exists = fs.existsSync(localPath);
+        console.log(`Dish Image File Exists at ${localPath}?`, exists);
+     } else {
+         console.warn('WARNING: No Dish Image URL generated.');
+     }
 
     } else {
       console.error('API Failed:', res.data);

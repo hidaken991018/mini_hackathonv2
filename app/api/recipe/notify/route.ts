@@ -306,69 +306,76 @@ ${inventoryList}
       },
     });
 
-    // --- 画像生成処理 (Nano BananaPro / Gemini 2.5) ---
-    let generatedImageUrl: string | null = null;
+    // --- 画像生成処理 (Nano BananaPro / Gemini 3 Pro) ---
+    let generatedDishUrl: string | null = null;
+    let generatedInfographicUrl: string | null = null;
+
     try {
       // ユーザー指定のモデル名
-      const imageModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
+      const imageModel = genAI.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
 
-      // 画像生成プロンプト
-      const imagePrompt = `
-      Create a high-quality visualization for a recipe titled "${recipeTitle}".
-      The image MUST include two distinct elements combined into one composition:
-      1. A delicious, professional-looking "Completed Image" of the final dish.
-      2. A visual representation of the "Cooking Steps" (e.g., ingredients being prepared or a key cooking moment).
-      
-      Style: Photorealistic, appetizing, bright lighting, high resolution.
+      // 1. 完成イメージ生成 (通知カード用)
+      console.log('Generating Dish Image...');
+      const dishPrompt = `
+      Create a delicious, professional-looking "Completed Image" of the final dish titled "${recipeTitle}".
+      Focus on the food itself, photorealistic, appetizing, bright lighting, high resolution.
+      One single scene.
       `;
+      
+      const dishResult = await imageModel.generateContent(dishPrompt);
+      const dishResponse = await dishResult.response;
+      let dishBase64: string | null = null;
 
-      // 画像生成実行
-      // 注: 標準的なGeminiの画像生成は通常、generateContentで呼び出します。
-      // レスポンスに画像データが含まれることを期待します。
-      const imageResult = await imageModel.generateContent(imagePrompt);
-      const imageResponse = await imageResult.response;
-      
-      // レスポンスから画像データを抽出
-      // (SDKの仕様に基づき、inlineDataまたはtextに含まれるbase64を探す)
-      // 注意: 現在のSDKバージョンで画像生成がどう返されるか、モデルの実装依存ですが
-      // マニュアル実装として、parts配列からinlineDataを探すか、テキスト内のdata URLを探します。
-      
-      // ケース1: inlineDataとして返される場合 (Imagen on Vertex AIなど)
-      // ケース2: Base64文字列としてテキストで返される場合
-      
-      // まずはpartsを確認
-      let base64Data: string | null = null;
-      if (imageResponse.candidates && imageResponse.candidates[0].content.parts) {
-         for (const part of imageResponse.candidates[0].content.parts) {
+      if (dishResponse.candidates && dishResponse.candidates[0].content.parts) {
+         for (const part of dishResponse.candidates[0].content.parts) {
             if (part.inlineData && part.inlineData.data) {
-               base64Data = part.inlineData.data;
+               dishBase64 = part.inlineData.data;
                break;
             }
          }
       }
 
-      // partsになければ、テキストとして返ってきている可能性（JSON内など）を考慮
-      // もしくは、画像生成モデルが標準的なgenerateContentではなく、別のメソッドを要求する可能性もありますが、
-      // ここではSDK標準を用います。
-      
-      if (base64Data) {
-        // 保存
-        const savedPath = await saveBase64Image(base64Data);
-        generatedImageUrl = savedPath;
-      } else {
-        console.warn('Image generation response did not contain inlineData.');
+      if (dishBase64) {
+        generatedDishUrl = await saveBase64Image(dishBase64, 'dishes');
+      }
+
+      // 2. レシピインフォグラフィック生成 (モーダル用)
+      console.log('Generating Infographic Image...');
+      const infographicPrompt = `
+      Create an infographic image for the recipe "${recipeTitle}".
+      The image should visually explain the cooking process and key steps.
+      Includes illustrations of ingredients and cooking actions (e.g., cutting, frying).
+      Can include text labels (Japanese if possible, otherwise English) and icons.
+      Style: Clean, modern infographic, easy to understand, instructional.
+      `;
+
+      const infoResult = await imageModel.generateContent(infographicPrompt);
+      const infoResponse = await infoResult.response;
+      let infoBase64: string | null = null;
+
+      if (infoResponse.candidates && infoResponse.candidates[0].content.parts) {
+         for (const part of infoResponse.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+               infoBase64 = part.inlineData.data;
+               break;
+            }
+         }
+      }
+
+      if (infoBase64) {
+        generatedInfographicUrl = await saveBase64Image(infoBase64, 'infographics');
       }
 
     } catch (imgError) {
       console.error('Image generation failed:', imgError);
-      // 画像生成失敗しても、レシピ生成自体は成功とする（画像なしで進む）
+      // 画像生成失敗しても、レシピ生成自体は成功とする
     }
 
-    // レシピに画像を更新 (あれば)
-    if (generatedImageUrl) {
+    // レシピに画像を更新 (あればインフォグラフィック)
+    if (generatedInfographicUrl) {
         await prisma.recipe.update({
             where: { id: recipe.id },
-            data: { imageUrl: generatedImageUrl }
+            data: { imageUrl: generatedInfographicUrl }
         });
     }
 
@@ -379,7 +386,7 @@ ${inventoryList}
         title,
         body,
         recipeId: recipe.id,
-        imageUrl: generatedImageUrl, // 通知にも画像を設定
+        imageUrl: generatedDishUrl, // 通知カードには完成イメージ
       },
     });
 

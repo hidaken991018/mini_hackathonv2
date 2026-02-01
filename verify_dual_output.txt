@@ -1,0 +1,15 @@
+- Safe-chain: Scanning for malicious packages...
+--- Verification Start ---
+User synced: mock-user-001
+Inventory added: 繝医・繝・ 蜊ｵ, 繝吶・繧ｳ繝ｳ
+Calling Notification API...
+API Response Status: 200
+Notification ID: aba14157-c323-4719-bd04-5d70af284543
+Recipe Title: 繝吶・繧ｳ繝ｳ縺ｨ繝医・繝医→蜊ｵ縺ｮ轤偵ａ迚ｩ
+Generated Dish Image URL (Notification): No image URL returned
+Recipe in DB Infographic URL: /images/infographics/685bf206-b9d4-4d20-a55c-7207f7f4b5b4.png
+Notification in DB Dish URL: /images/dishes/82eac042-73d0-41b1-96c7-6e0e6d66e5eb.png
+Infographic File Exists at C:\繝溘ル繝上ャ繧ｫ繧ｽ繝ｳ_繝輔か繝ｼ繧ｯ蛻・mini_hackathonv2\public\images\infographics\685bf206-b9d4-4d20-a55c-7207f7f4b5b4.png? true
+Dish Image File Exists at C:\繝溘ル繝上ャ繧ｫ繧ｽ繝ｳ_繝輔か繝ｼ繧ｯ蛻・mini_hackathonv2\public\images\dishes\82eac042-73d0-41b1-96c7-6e0e6d66e5eb.png? true
+
+笨・Safe-chain: Command completed, no malicious packages found.

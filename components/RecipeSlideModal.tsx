@@ -114,50 +114,10 @@ export default function RecipeSlideModal({
         {/* レシピパネル */}
         <div className="w-full">
           {/* ヘッダー画像 */}
-          {notification.image ? (
-            <div className="relative h-64 bg-gray-100 flex-shrink-0">
-              <img
-                src={notification.image}
-                alt={notification.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
-                aria-label="閉じる"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-900"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-              <div className="absolute bottom-4 left-4 right-4">
-                <h2 className="text-2xl font-bold text-white mb-1">
-                  {notification.title}
-                </h2>
-                <p className="text-white/90 text-sm">{notification.body}</p>
-              </div>
-            </div>
-          ) : (notification.type === 'expiry' || notification.type === 'warning') && (
-            <div className="relative h-48 bg-red-50 flex-shrink-0 flex items-center justify-center">
-              <img
-                src="/images/notifications/expiry.png"
-                alt={notification.title}
-                className="h-32 w-32 object-contain opacity-80"
-              />
+            <div className="relative h-32 bg-gray-50 flex-shrink-0">
                <button
                 onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors shadow-sm"
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors shadow-sm z-10"
                 aria-label="閉じる"
               >
                 <svg
@@ -178,10 +138,9 @@ export default function RecipeSlideModal({
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">
                   {notification.title}
                 </h2>
-                <p className="text-gray-700 text-sm">{notification.body}</p>
+                <p className="text-gray-600 text-sm">{notification.body}</p>
               </div>
             </div>
-          )}
 
           {/* レシピコンテンツ */}
           <div className="overflow-y-auto px-6 py-6 flex-1 max-h-[calc(90vh-256px)]">
@@ -189,6 +148,15 @@ export default function RecipeSlideModal({
             <>
               {/* レシピ情報 */}
               <div className="mb-6">
+                {notification.recipe.imageUrl && (
+                  <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                    <img
+                      src={notification.recipe.imageUrl}
+                      alt="Recipe Infographic"
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex gap-4 mb-4">
                   {notification.recipe.cookingTime && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">

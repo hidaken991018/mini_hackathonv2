@@ -30,6 +30,7 @@ export type Notification = {
     steps: RecipeStep[];
     cookingTime?: string;
     servings?: string;
+    imageUrl?: string;
   };
 };
 

@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
             })),
             cookingTime: notification.recipe.cookingTime ?? undefined,
             servings: notification.recipe.servings ?? undefined,
+            imageUrl: notification.recipe.imageUrl ?? undefined,
           }
         : undefined,
     }))
