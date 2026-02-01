@@ -32,7 +32,7 @@ export type Notification = {
   };
 };
 
-// 在庫アイテムの型
+// 在庫アイテムの型（登録前）
 export type InventoryItem = {
   name: string;
   quantityValue?: number;
@@ -40,6 +40,20 @@ export type InventoryItem = {
   expireDate?: string;
   consumeBy?: string;
   note?: string;
+};
+
+// 在庫アイテムの型（ID付き、API レスポンス用）
+export type InventoryItemWithId = {
+  id: string;
+  name: string;
+  quantityValue?: number;
+  quantityUnit?: string;
+  expireDate?: string;
+  consumeBy?: string;
+  note?: string;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 // レシート解析結果の型（拡張版）
