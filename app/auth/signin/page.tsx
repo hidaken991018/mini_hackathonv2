@@ -2,11 +2,17 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 export default function SignInPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     // すでにログイン済みの場合は /input にリダイレクト
@@ -14,6 +20,61 @@ export default function SignInPage() {
       router.push("/input");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    setErrorMessage(null);
+  }, [mode]);
+
+  const getAuthErrorMessage = (error: unknown) => {
+    const code = (error as { code?: string }).code;
+    switch (code) {
+      case "auth/invalid-email":
+        return "メールアドレスの形式を確認してください。";
+      case "auth/user-not-found":
+        return "ユーザーが見つかりませんでした。";
+      case "auth/wrong-password":
+        return "パスワードが正しくありません。";
+      case "auth/email-already-in-use":
+        return "このメールアドレスは既に使用されています。";
+      case "auth/weak-password":
+        return "パスワードは6文字以上で入力してください。";
+      case "auth/too-many-requests":
+        return "試行回数が多すぎます。しばらく待って再度お試しください。";
+      default:
+        return mode === "signup" ? "アカウント作成に失敗しました。" : "ログインに失敗しました。";
+    }
+  };
+
+  const handleEmailAuth = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+
+    if (!trimmedEmail) {
+      setErrorMessage("メールアドレスを入力してください。");
+      return;
+    }
+
+    if (!password) {
+      setErrorMessage("パスワードを入力してください。");
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      if (mode === "signup") {
+        await signUpWithEmail(trimmedEmail, password, trimmedName || undefined);
+      } else {
+        await signInWithEmail(trimmedEmail, password);
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,6 +159,97 @@ export default function SignInPage() {
                 Googleでログイン
               </span>
             </button>
+
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="h-px flex-1 bg-slate-200" />
+              または
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+              <div className="mb-3 flex rounded-full bg-white/80 p-1 text-[11px] font-semibold text-slate-500 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setMode("signin")}
+                  className={`flex-1 rounded-full px-3 py-1 transition ${
+                    mode === "signin"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "hover:text-slate-700"
+                  }`}
+                >
+                  ログイン
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className={`flex-1 rounded-full px-3 py-1 transition ${
+                    mode === "signup"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "hover:text-slate-700"
+                  }`}
+                >
+                  新規登録
+                </button>
+              </div>
+
+              <form onSubmit={handleEmailAuth} className="space-y-3">
+                {mode === "signup" && (
+                  <label className="block text-xs font-semibold text-slate-600">
+                    表示名（任意）
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      autoComplete="name"
+                      className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    />
+                  </label>
+                )}
+
+                <label className="block text-xs font-semibold text-slate-600">
+                  メールアドレス
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold text-slate-600">
+                  パスワード
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    minLength={6}
+                    className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                  />
+                </label>
+
+                {errorMessage && (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] text-rose-600">
+                    {errorMessage}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting
+                    ? mode === "signup"
+                      ? "アカウント作成中..."
+                      : "ログイン中..."
+                    : mode === "signup"
+                      ? "メールで新規登録"
+                      : "メールでログイン"}
+                </button>
+              </form>
+            </div>
 
             <div className="rounded-2xl bg-white/80 px-4 py-3 text-xs text-slate-600 shadow-sm">
               さっそく冷蔵庫を登録して、今日のおすすめレシピを見つけましょう。
