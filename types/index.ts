@@ -20,6 +20,7 @@ export type Notification = {
   id: string;
   title: string;
   body: string;
+  type?: string; 
   image?: string;
   createdAt: Date;
   readAt: Date | null;
@@ -29,6 +30,7 @@ export type Notification = {
     steps: RecipeStep[];
     cookingTime?: string;
     servings?: string;
+    imageUrl?: string;
   };
 };
 

@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { saveBase64Image } from '@/lib/image-storage';
 import { requireAuth } from '@/lib/auth-helpers';
 
 type GeneratedIngredient = {
@@ -301,6 +302,79 @@ ${inventoryList}
       },
     });
 
+    // --- 画像生成処理 (Nano BananaPro / Gemini 3 Pro) ---
+    let generatedDishUrl: string | null = null;
+    let generatedInfographicUrl: string | null = null;
+
+    try {
+      // ユーザー指定のモデル名
+      const imageModel = genAI.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
+
+      // 1. 完成イメージ生成 (通知カード用)
+      console.log('Generating Dish Image...');
+      const dishPrompt = `
+      Create a delicious, professional-looking "Completed Image" of the final dish titled "${recipeTitle}".
+      Focus on the food itself, photorealistic, appetizing, bright lighting, high resolution.
+      One single scene.
+      `;
+      
+      const dishResult = await imageModel.generateContent(dishPrompt);
+      const dishResponse = await dishResult.response;
+      let dishBase64: string | null = null;
+
+      if (dishResponse.candidates && dishResponse.candidates[0].content.parts) {
+         for (const part of dishResponse.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+               dishBase64 = part.inlineData.data;
+               break;
+            }
+         }
+      }
+
+      if (dishBase64) {
+        generatedDishUrl = await saveBase64Image(dishBase64, 'dishes');
+      }
+
+      // 2. レシピインフォグラフィック生成 (モーダル用)
+      console.log('Generating Infographic Image...');
+      const infographicPrompt = `
+      Create an infographic image for the recipe "${recipeTitle}".
+      The image should visually explain the cooking process and key steps.
+      Includes illustrations of ingredients and cooking actions (e.g., cutting, frying).
+      Can include text labels (Japanese if possible, otherwise English) and icons.
+      Style: Clean, modern infographic, easy to understand, instructional.
+      `;
+
+      const infoResult = await imageModel.generateContent(infographicPrompt);
+      const infoResponse = await infoResult.response;
+      let infoBase64: string | null = null;
+
+      if (infoResponse.candidates && infoResponse.candidates[0].content.parts) {
+         for (const part of infoResponse.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+               infoBase64 = part.inlineData.data;
+               break;
+            }
+         }
+      }
+
+      if (infoBase64) {
+        generatedInfographicUrl = await saveBase64Image(infoBase64, 'infographics');
+      }
+
+    } catch (imgError) {
+      console.error('Image generation failed:', imgError);
+      // 画像生成失敗しても、レシピ生成自体は成功とする
+    }
+
+    // レシピに画像を更新 (あればインフォグラフィック)
+    if (generatedInfographicUrl) {
+        await prisma.recipe.update({
+            where: { id: recipe.id },
+            data: { imageUrl: generatedInfographicUrl }
+        });
+    }
+
     const notification = await prisma.notification.create({
       data: {
         userId,
@@ -308,6 +382,7 @@ ${inventoryList}
         title,
         body,
         recipeId: recipe.id,
+        imageUrl: generatedDishUrl, // 通知カードには完成イメージ
       },
     });
 
