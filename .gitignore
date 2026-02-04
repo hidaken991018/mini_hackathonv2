@@ -189,3 +189,8 @@ next-env.d.ts
 # SQLite database
 *.db
 *.db-journal
+
+# generated images (local only)
+public/images/dishes/
+public/images/generated/
+public/images/infographics/
