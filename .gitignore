@@ -120,6 +120,9 @@ dist
 # Firebase cache directory
 .firebase/
 
+# Firebase Admin SDK credentials
+firebase-admin-key.json
+
 # TernJS port file
 .tern-port
 

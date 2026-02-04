@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gemini 2.0 Flash モデルを使用（画像解析に対応、最新版）
+    // Gemini 1.5 Flash モデルを使用（画像解析に対応、安定版）
     // 構造化出力（Structured Output）を使用してJSON形式を保証
     // 参考: https://ai.google.dev/gemini-api/docs/structured-output?hl=ja
     const model = genAI.getGenerativeModel({
