@@ -1,15 +1,14 @@
 'use client';
 
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeSlideModal from '@/components/RecipeSlideModal';
 import NotificationCard from '@/components/NotificationCard';
 import { Notification } from '@/types';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
 
 // 在庫アイテムの型（ローカル状態用）
 type LocalInventory = {
@@ -20,6 +19,8 @@ type LocalInventory = {
 };
 
 export default function NotificationsPage() {
+  const { user, loading, getIdToken } = useAuth();
+  const router = useRouter();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
 
@@ -29,12 +30,24 @@ export default function NotificationsPage() {
   // 在庫状態
   const [inventories, setInventories] = useState<LocalInventory[]>([]);
 
+  // ログイン状態確認
   useEffect(() => {
-    if (hasLoadedNotifications) return;
+    if (!loading && !user) {
+      router.push("/auth/signin");
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (hasLoadedNotifications || !user) return;
 
     const loadNotifications = async () => {
       try {
-        const res = await fetch(`/api/notifications?userId=${DEFAULT_USER_ID}`);
+        const token = await getIdToken();
+        const res = await fetch(`/api/notifications`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         if (!res.ok) return;
 
         const payload = await res.json();
@@ -54,7 +67,7 @@ export default function NotificationsPage() {
     };
 
     loadNotifications();
-  }, [hasLoadedNotifications]);
+  }, [hasLoadedNotifications, user, getIdToken]);
 
   // 通知既読処理（楽観的更新 + API呼び出し）
   const handleMarkAsRead = async (id: string) => {
@@ -67,7 +80,7 @@ export default function NotificationsPage() {
 
     // バックグラウンドでAPI呼び出し
     try {
-      await axios.patch(`/api/notifications/${id}/read`);
+      await axiosInstance.patch(`/api/notifications/${id}/read`);
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
@@ -84,9 +97,7 @@ export default function NotificationsPage() {
 
     // バックグラウンドでAPI呼び出し
     try {
-      await axios.patch('/api/notifications/read-all', {
-        userId: DEFAULT_USER_ID,
-      });
+      await axiosInstance.patch('/api/notifications/read-all', {});
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
     }
@@ -98,6 +109,14 @@ export default function NotificationsPage() {
       prev.filter((inv) => !deletedInventoryIds.includes(inv.id))
     );
   };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
