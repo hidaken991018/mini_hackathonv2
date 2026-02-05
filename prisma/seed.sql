@@ -1,4 +1,5 @@
-PRAGMA foreign_keys=ON;
+-- PostgreSQL シードデータ
+-- 外部キー制約はPostgreSQLでデフォルト有効
 
 INSERT INTO "users" ("id", "name", "created_at", "updated_at")
 VALUES ('mock-user-001', 'テストユーザー', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -13,13 +14,13 @@ INSERT INTO "inventories" (
   "created_at",
   "updated_at"
 ) VALUES
-  ('inv-tomato-001', 'mock-user-001', 'トマト', 2, '個', datetime('now', '+2 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-egg-001', 'mock-user-001', '卵', 6, '個', datetime('now', '+5 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-chicken-001', 'mock-user-001', '鶏むね肉', 1, '枚', datetime('now', '+3 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-onion-001', 'mock-user-001', '玉ねぎ', 1, '個', datetime('now', '+7 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-carrot-001', 'mock-user-001', 'にんじん', 1, '本', datetime('now', '+6 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-potato-001', 'mock-user-001', 'じゃがいも', 2, '個', datetime('now', '+8 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('inv-miso-001', 'mock-user-001', '味噌', 300, 'g', datetime('now', '+30 days'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  ('inv-tomato-001', 'mock-user-001', 'トマト', 2, '個', NOW() + INTERVAL '2 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-egg-001', 'mock-user-001', '卵', 6, '個', NOW() + INTERVAL '5 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-chicken-001', 'mock-user-001', '鶏むね肉', 1, '枚', NOW() + INTERVAL '3 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-onion-001', 'mock-user-001', '玉ねぎ', 1, '個', NOW() + INTERVAL '7 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-carrot-001', 'mock-user-001', 'にんじん', 1, '本', NOW() + INTERVAL '6 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-potato-001', 'mock-user-001', 'じゃがいも', 2, '個', NOW() + INTERVAL '8 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('inv-miso-001', 'mock-user-001', '味噌', 300, 'g', NOW() + INTERVAL '30 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO "recipes" (
   "id",
@@ -75,3 +76,4 @@ INSERT INTO "recipe_steps" (
   ('rs-miso-02', 'recipe-miso-soup-001', 2, '鍋にだしと野菜を入れ、火が通るまで煮る。'),
   ('rs-miso-03', 'recipe-miso-soup-001', 3, '火を止めて味噌を溶き入れる。'),
   ('rs-miso-04', 'recipe-miso-soup-001', 4, 'ひと煮立ちさせずに温めて完成。');
+

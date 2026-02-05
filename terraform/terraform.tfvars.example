@@ -1,0 +1,15 @@
+# Terraform 変数ファイルのサンプル
+# このファイルをコピーして terraform.tfvars として保存し、値を設定してください
+
+project_id = "syufy-85423"
+region     = "asia-northeast1"
+
+service_name     = "mini-hackathon"
+db_instance_name = "mini-hackathon-db"
+db_name          = "hackathon"
+db_user          = "dbuser"
+db_password      = "YOUR_SECURE_PASSWORD_HERE"
+
+# container_image は最初のビルド後に設定
+# 例: asia-northeast1-docker.pkg.dev/syufy-85423/mini-hackathon/app:latest
+container_image = "asia-northeast1-docker.pkg.dev/syufy-85423/mini-hackathon/app:latest"

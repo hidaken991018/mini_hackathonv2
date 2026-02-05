@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build output (we copy specific parts)
+.next
+
+# Development files
+*.md
+.git
+.gitignore
+.eslintrc.json
+tsconfig.json
+
+# Environment files (secrets should be set in Cloud Run)
+.env
+.env.local
+.env.development
+.env.production
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma dev database
+prisma/dev.db
+prisma/dev.db-journal

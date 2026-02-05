@@ -1,0 +1,105 @@
+# Terraform + Docker Build 自動デプロイ
+# mainブランチへのpush時に自動実行
+
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [feature/terraform-cloudrun]
+    paths:
+      - 'mini_hackathonv2/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:  # 手動実行も可能
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: asia-northeast1
+  SERVICE_NAME: mini-hackathon
+  REPOSITORY: mini-hackathon
+
+jobs:
+  # ============================================
+  # Job 1: Docker イメージをビルド＆プッシュ
+  # ============================================
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push
+        id: meta
+        run: |
+          IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          docker build -t $IMAGE_TAG ./mini_hackathonv2
+          docker push $IMAGE_TAG
+          echo "tags=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Job 2: Terraform でインフラ + デプロイ
+  # ============================================
+  deploy:
+    name: Deploy with Terraform
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: ./mini_hackathonv2/terraform
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="project_id=${{ env.PROJECT_ID }}" \
+            -var="container_image=${{ needs.build.outputs.image_tag }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get Cloud Run URL
+        id: get-url
+        run: |
+          URL=$(terraform output -raw cloud_run_url)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "::notice title=Deployed URL::$URL"
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service URL:** ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ needs.build.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY

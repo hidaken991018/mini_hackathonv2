@@ -21,7 +21,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google-cloud/vertexai": "^1.9.2",
     "@prisma/client": "^5.22.0",
     "axios": "^1.13.2",
     "next": "^14.2.5",
