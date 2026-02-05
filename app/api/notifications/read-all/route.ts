@@ -1,19 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId } = body;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'ユーザーIDが必要です' },
-        { status: 400 }
-      );
-    }
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
 
     // 未読の通知を全て既読に更新
     const result = await prisma.notification.updateMany({

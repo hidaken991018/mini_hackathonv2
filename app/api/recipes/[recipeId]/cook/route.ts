@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -8,20 +9,15 @@ export async function POST(
   { params }: { params: { recipeId: string } }
 ) {
   try {
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { recipeId } = params;
-    const body = await request.json();
-    const { userId } = body;
 
     if (!recipeId) {
       return NextResponse.json(
         { error: 'レシピIDが必要です' },
-        { status: 400 }
-      );
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'ユーザーIDが必要です' },
         { status: 400 }
       );
     }
