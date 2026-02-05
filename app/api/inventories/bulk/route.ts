@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -14,35 +15,19 @@ type InventoryItemInput = {
 
 export async function POST(request: NextRequest) {
   try {
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const body = await request.json();
-    const { userId, items } = body as {
-      userId: string;
+    const { items } = body as {
       items: InventoryItemInput[];
     };
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'ユーザーIDが必要です' },
-        { status: 400 }
-      );
-    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: '登録する在庫アイテムが必要です' },
         { status: 400 }
-      );
-    }
-
-    // ユーザーの存在確認
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: '指定されたユーザーが見つかりません' },
-        { status: 404 }
       );
     }
 
