@@ -1,0 +1,26 @@
+name: Expiry Notification (Daily)
+
+on:
+  schedule:
+    # 08:00 JST = 23:00 UTC (previous day)
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call expiry notification API
+        env:
+          NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+          BASE_URL: ${{ secrets.NOTIFY_BASE_URL }}
+          USER_ID: ${{ secrets.NOTIFY_USER_ID }}
+        run: |
+          if [ -z "$NOTIFY_SECRET" ] || [ -z "$BASE_URL" ] || [ -z "$USER_ID" ]; then
+            echo "Missing secrets: NOTIFY_SECRET / NOTIFY_BASE_URL / NOTIFY_USER_ID"
+            exit 1
+          fi
+          curl -sS -X POST "$BASE_URL/api/notifications/expiry" \
+            -H "Content-Type: application/json" \
+            -H "x-notify-secret: $NOTIFY_SECRET" \
+            -d "{\"userId\":\"$USER_ID\"}"
