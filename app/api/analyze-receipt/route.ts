@@ -75,9 +75,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gemini 2.0 Flash モデルを取得
+    // Gemini 2.0 Flash モデルを使用（画像解析に対応）
+    // 構造化出力（Structured Output）を使用してJSON形式を保証
+    // 参考: https://ai.google.dev/gemini-api/docs/structured-output?hl=ja
     const model = vertexAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: responseSchema,

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -8,12 +9,35 @@ export async function PATCH(
   { params }: { params: { notificationId: string } }
 ) {
   try {
+    // Firebase Auth Tokenから userId を取得
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { notificationId } = params;
 
     if (!notificationId) {
       return NextResponse.json(
         { error: '通知IDが必要です' },
         { status: 400 }
+      );
+    }
+
+    // 通知の所有者チェック
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      return NextResponse.json(
+        { error: '指定された通知が見つかりません' },
+        { status: 404 }
+      );
+    }
+
+    if (notification.userId !== userId) {
+      return NextResponse.json(
+        { error: 'この通知にアクセスする権限がありません' },
+        { status: 403 }
       );
     }
 

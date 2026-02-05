@@ -45,6 +45,14 @@ export default function NotificationCard({
             alt={notification.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           />
+        ) : notification.type === 'expiry' || notification.type === 'warning' ? (
+           <div className="w-full h-full flex items-center justify-center bg-red-50">
+            <img 
+              src="/images/notifications/expiry.png" 
+              alt="Warning"
+              className="w-16 h-16 object-contain group-hover:scale-110 transition-transform duration-200"
+            />
+           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
             <svg
