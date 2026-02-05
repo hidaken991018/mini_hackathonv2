@@ -9,7 +9,7 @@ resource "google_sql_database_instance" "main" {
     tier = "db-f1-micro" # 最小インスタンス（開発/デモ用）
 
     ip_configuration {
-      ipv4_enabled = true  # Cloud Run経由の接続を許可
+      ipv4_enabled = true # Cloud Run経由の接続を許可
     }
 
     backup_configuration {
