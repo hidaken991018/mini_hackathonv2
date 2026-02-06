@@ -16,6 +16,9 @@ export default function RecipesPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -71,6 +74,54 @@ export default function RecipesPage() {
   useEffect(() => {
     fetchRecipes();
   }, [fetchRecipes]);
+
+  const handleGenerateAIRecipe = useCallback(async () => {
+    if (!user || isGenerating) return;
+
+    setGenerateError(null);
+    setGenerateSuccess(null);
+    setIsGenerating(true);
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/recipe/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        setGenerateError(result.error || 'AIレシピの生成に失敗しました');
+        return;
+      }
+
+      setGenerateSuccess('AIレシピを生成しました');
+
+      const nextFilter = filter === 'user_created' ? 'ai_generated' : filter;
+      const nextSearchQuery = searchQuery ? '' : searchQuery;
+
+      if (nextFilter !== filter) {
+        setFilter(nextFilter);
+      }
+      if (nextSearchQuery !== searchQuery) {
+        setSearchQuery(nextSearchQuery);
+      }
+
+      if (nextFilter === filter && nextSearchQuery === searchQuery) {
+        await fetchRecipes();
+      }
+    } catch (err) {
+      console.error('Generate recipe error:', err);
+      setGenerateError('AIレシピの生成中にエラーが発生しました');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [user, isGenerating, filter, searchQuery, fetchRecipes]);
 
   const handleRecipeClick = async (recipeId: string) => {
     if (!user) return;
@@ -176,6 +227,35 @@ export default function RecipesPage() {
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">レシピ</h1>
+            <button
+              onClick={handleGenerateAIRecipe}
+              disabled={isGenerating}
+              aria-busy={isGenerating}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                isGenerating
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-900 text-white hover:bg-gray-800'
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  AIで生成
+                </>
+              )}
+            </button>
           </div>
 
           {/* 検索バー */}
@@ -218,6 +298,15 @@ export default function RecipesPage() {
               </button>
             ))}
           </div>
+          {(generateError || generateSuccess) && (
+            <div className="mt-3 text-sm">
+              {generateError ? (
+                <p className="text-red-600">{generateError}</p>
+              ) : (
+                <p className="text-emerald-600">{generateSuccess}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -241,7 +330,7 @@ export default function RecipesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {recipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
