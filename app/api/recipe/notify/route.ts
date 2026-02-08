@@ -282,6 +282,8 @@ ${inventoryList}
 
     const recipe = await prisma.recipe.create({
       data: {
+        userId: userId!,
+        sourceType: 'ai_generated',
         title: recipeTitle,
         cookingTime: parsed.cookingTime ?? null,
         servings: parsed.servings ?? null,
