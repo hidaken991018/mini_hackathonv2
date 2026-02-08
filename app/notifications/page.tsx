@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import BottomNav from '@/components/BottomNav';
+import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeSlideModal from '@/components/RecipeSlideModal';
 import NotificationCard from '@/components/NotificationCard';
@@ -151,6 +152,7 @@ export default function NotificationsPage() {
       </div>
 
       <BottomNav />
+      <ReceiptUploadPanel />
 
       {/* レシピスライドモーダル */}
       <RecipeSlideModal
