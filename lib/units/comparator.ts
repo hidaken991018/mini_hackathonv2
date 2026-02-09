@@ -5,7 +5,7 @@
 import type { QuantityComparisonResult, NormalizedQuantity, IngredientAvailability } from './types';
 import { normalizeQuantity, normalizeUnit, isSameCategory } from './normalizer';
 import { convert, canConvert } from './converter';
-import { BASE_UNITS } from './constants';
+import { BASE_UNITS, CONSUME_AMOUNTS } from './constants';
 
 /**
  * 2つの数量を比較する
@@ -245,4 +245,46 @@ export function calculateRemainingQuantity(
 
   const remaining = inventory.value - convertedConsumed;
   return { value: Math.max(0, remaining), unit: inventory.unit };
+}
+
+/**
+ * 在庫アイテムのスマート消費情報を取得する
+ * @param quantityValue 現在の数量（null/undefinedの場合は1として扱う）
+ * @param quantityUnit 単位文字列（null/undefinedの場合は「個」として扱う）
+ * @returns consumeAmount: 消費する量, buttonLabel: ボタン表示文字列, willDelete: 消費後に削除されるか
+ */
+export function getConsumeInfo(
+  quantityValue: number | null | undefined,
+  quantityUnit: string | null | undefined
+): { consumeAmount: number; buttonLabel: string; willDelete: boolean } {
+  const effectiveValue = quantityValue ?? 1;
+  const effectiveUnit = quantityUnit || '個';
+  const normalized = normalizeUnit(effectiveUnit);
+
+  const consumeConfig = CONSUME_AMOUNTS[normalized.normalized];
+
+  if (!consumeConfig) {
+    // 未知の単位はデフォルト -1
+    const consumeAmount = Math.min(1, effectiveValue);
+    return {
+      consumeAmount,
+      buttonLabel: '-1',
+      willDelete: effectiveValue <= 1,
+    };
+  }
+
+  // 残量が消費単位より少ない場合は残り全部消費
+  if (effectiveValue <= consumeConfig.amount) {
+    return {
+      consumeAmount: effectiveValue,
+      buttonLabel: consumeConfig.label,
+      willDelete: true,
+    };
+  }
+
+  return {
+    consumeAmount: consumeConfig.amount,
+    buttonLabel: consumeConfig.label,
+    willDelete: false,
+  };
 }

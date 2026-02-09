@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import { ReceiptAnalysisResult, InventoryItem } from '@/types';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
 
 // ローカル在庫型
 type LocalInventory = {
@@ -128,8 +125,7 @@ export default function CreateNoteModal({
     setIsRegistering(true);
 
     try {
-      const response = await axios.post('/api/inventories/bulk', {
-        userId: DEFAULT_USER_ID,
+      const response = await axiosInstance.post('/api/inventories/bulk', {
         items: previewItems,
       });
 

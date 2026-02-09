@@ -1,6 +1,7 @@
 'use client';
 
 import { InventoryItemWithId } from '@/types';
+import { getConsumeInfo } from '@/lib/units';
 
 interface InventoryItemProps {
   item: InventoryItemWithId;
@@ -36,6 +37,17 @@ export default function InventoryItem({
   const expiringSoon =
     isExpiringSoon(item.expireDate) || isExpiringSoon(item.consumeBy);
 
+  // 数量の表示用フォーマット（浮動小数点誤差対策）
+  const formatQuantityValue = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return '1';
+    const rounded = Math.round(value * 100) / 100;
+    return rounded.toString();
+  };
+
+  const displayValue = formatQuantityValue(item.quantityValue);
+  const displayUnit = item.quantityUnit || '個';
+  const { buttonLabel } = getConsumeInfo(item.quantityValue, item.quantityUnit);
+
   // 背景色の決定
   const getBgColor = () => {
     if (expireWarning) return 'bg-red-50';
@@ -61,12 +73,10 @@ export default function InventoryItem({
             {item.name}
           </h3>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {item.quantityValue !== undefined && item.quantityValue !== null && (
-              <span className="text-sm text-gray-600">
-                {item.quantityValue}
-                {item.quantityUnit || '個'}
-              </span>
-            )}
+            <span className="text-sm text-gray-600">
+              {displayValue}
+              {displayUnit}
+            </span>
             {item.expireDate && (
               <span className={`text-xs ${getDateColor()}`}>
                 賞味: {item.expireDate}
@@ -88,7 +98,7 @@ export default function InventoryItem({
           }}
           disabled={isConsuming}
           className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 flex items-center justify-center transition-colors disabled:opacity-50"
-          aria-label="1つ消費"
+          aria-label={`${buttonLabel}消費`}
         >
           {isConsuming ? (
             <svg
@@ -111,7 +121,7 @@ export default function InventoryItem({
               />
             </svg>
           ) : (
-            <span className="text-lg font-bold">-1</span>
+            <span className="text-lg font-bold">{buttonLabel}</span>
           )}
         </button>
       </div>

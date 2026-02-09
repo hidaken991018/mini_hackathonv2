@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -53,6 +54,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -62,6 +66,14 @@ export async function PUT(
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
         { status: 404 }
+      );
+    }
+
+    // 所有者確認
+    if (existing.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'この在庫を編集する権限がありません' },
+        { status: 403 }
       );
     }
 
@@ -111,6 +123,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { id } = await params;
 
     // 在庫の存在確認
@@ -119,6 +134,14 @@ export async function DELETE(
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
         { status: 404 }
+      );
+    }
+
+    // 所有者確認
+    if (existing.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'この在庫を削除する権限がありません' },
+        { status: 403 }
       );
     }
 

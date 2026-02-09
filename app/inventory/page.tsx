@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import axiosInstance from '@/lib/axios';
+import { useAuth } from '@/contexts/AuthContext';
+import { getConsumeInfo } from '@/lib/units';
 import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import InventoryList from '@/components/InventoryList';
 import InventoryEditModal from '@/components/InventoryEditModal';
 import { InventoryItemWithId } from '@/types';
 
-const DEFAULT_USER_ID = 'mock-user-001';
-
 export default function InventoryPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [inventories, setInventories] = useState<InventoryItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<InventoryItemWithId | null>(
@@ -19,13 +22,19 @@ export default function InventoryPage() {
   const [consumingId, setConsumingId] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
+  // 未認証時はサインインページへリダイレクト
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [authLoading, user, router]);
+
   // 在庫一覧を取得
   useEffect(() => {
+    if (!user) return;
     const fetchInventories = async () => {
       try {
-        const res = await axios.get(
-          `/api/inventories?userId=${DEFAULT_USER_ID}`
-        );
+        const res = await axiosInstance.get('/api/inventories');
         if (res.data.success) {
           setInventories(res.data.data);
         }
@@ -36,29 +45,43 @@ export default function InventoryPage() {
       }
     };
     fetchInventories();
-  }, []);
+  }, [user]);
 
   // 消費処理（楽観的更新）
   const handleConsume = async (id: string) => {
     setConsumingId(id);
 
-    // 楽観的更新
-    setInventories((prev) =>
-      prev
-        .map((inv) =>
-          inv.id === id
-            ? { ...inv, quantityValue: Math.max(0, (inv.quantityValue || 0) - 1) }
-            : inv
-        )
-        .filter((inv) => (inv.quantityValue || 0) > 0)
+    // 対象アイテムを取得して消費情報を算出
+    const targetItem = inventories.find((inv) => inv.id === id);
+    if (!targetItem) {
+      setConsumingId(undefined);
+      return;
+    }
+
+    const { consumeAmount, willDelete } = getConsumeInfo(
+      targetItem.quantityValue,
+      targetItem.quantityUnit
     );
 
+    // 楽観的更新（IDで特定し、他のアイテムには触らない）
+    setInventories((prev) => {
+      if (willDelete) {
+        return prev.filter((inv) => inv.id !== id);
+      }
+      return prev.map((inv) => {
+        if (inv.id !== id) return inv;
+        const currentValue = inv.quantityValue ?? 1;
+        const newValue = Math.round(Math.max(0, currentValue - consumeAmount) * 100) / 100;
+        return { ...inv, quantityValue: newValue };
+      });
+    });
+
     try {
-      await axios.patch(`/api/inventories/${id}/consume`);
+      await axiosInstance.patch(`/api/inventories/${id}/consume`);
     } catch (error) {
       console.error('Consume error:', error);
       // エラー時はリロード
-      const res = await axios.get(`/api/inventories?userId=${DEFAULT_USER_ID}`);
+      const res = await axiosInstance.get('/api/inventories');
       if (res.data.success) {
         setInventories(res.data.data);
       }
@@ -71,7 +94,7 @@ export default function InventoryPage() {
   const handleSave = async (id: string, data: Partial<InventoryItemWithId>) => {
     setIsSaving(true);
     try {
-      const res = await axios.put(`/api/inventories/${id}`, data);
+      const res = await axiosInstance.put(`/api/inventories/${id}`, data);
       if (res.data.success) {
         setInventories((prev) =>
           prev.map((inv) => (inv.id === id ? { ...inv, ...data } : inv))
@@ -89,7 +112,7 @@ export default function InventoryPage() {
   // 削除処理
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`/api/inventories/${id}`);
+      await axiosInstance.delete(`/api/inventories/${id}`);
       setInventories((prev) => prev.filter((inv) => inv.id !== id));
       setSelectedItem(null);
     } catch (error) {
