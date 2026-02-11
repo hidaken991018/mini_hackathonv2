@@ -31,22 +31,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SQLiteはcreateManyに対応していないため、$transactionでバルクインサート
-    const createdInventories = await prisma.$transaction(
-      items.map((item) =>
-        prisma.inventory.create({
-          data: {
-            userId,
-            name: item.name,
-            quantityValue: item.quantityValue,
-            quantityUnit: item.quantityUnit,
-            expireDate: item.expireDate ? new Date(item.expireDate) : null,
-            consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
-            note: item.note,
-          },
-        })
-      )
-    );
+    const createdInventories = await prisma.inventory.createManyAndReturn({
+      data: items.map((item) => ({
+        userId,
+        name: item.name,
+        quantityValue: item.quantityValue,
+        quantityUnit: item.quantityUnit,
+        expireDate: item.expireDate ? new Date(item.expireDate) : null,
+        consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
+        note: item.note,
+      })),
+    });
 
     return NextResponse.json({
       success: true,
