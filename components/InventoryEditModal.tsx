@@ -27,6 +27,7 @@ export default function InventoryEditModal({
     quantityUnit: '',
     expireDate: '',
     consumeBy: '',
+    purchaseDate: '',
     note: '',
     isStaple: false,
     expiryType: 'best_before' as ExpiryType,
@@ -55,6 +56,7 @@ export default function InventoryEditModal({
         quantityUnit: item.quantityUnit || '',
         expireDate: item.expireDate || '',
         consumeBy: item.consumeBy || '',
+        purchaseDate: item.purchaseDate || '',
         note: item.note || '',
         isStaple: item.isStaple || false,
         expiryType: detectExpiryType(item),
@@ -80,6 +82,7 @@ export default function InventoryEditModal({
       quantityUnit: formData.quantityUnit || undefined,
       expireDate: formData.expireDate || undefined,
       consumeBy: formData.consumeBy || undefined,
+      purchaseDate: formData.purchaseDate || undefined,
       note: formData.note || undefined,
       isStaple: formData.isStaple,
     });
@@ -147,6 +150,7 @@ export default function InventoryEditModal({
               </label>
               <input
                 type="number"
+                min="1"
                 value={formData.quantityValue}
                 onChange={(e) =>
                   setFormData({ ...formData, quantityValue: e.target.value })
@@ -193,6 +197,20 @@ export default function InventoryEditModal({
                   : '調理すると在庫を減らす'}
               </span>
             </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              購入日
+            </label>
+            <input
+              type="date"
+              value={formData.purchaseDate}
+              onChange={(e) =>
+                setFormData({ ...formData, purchaseDate: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
 
           <ExpiryDateInput

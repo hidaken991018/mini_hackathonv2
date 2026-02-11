@@ -6,6 +6,7 @@ import InventoryItem from './InventoryItem';
 interface InventoryListProps {
   items: InventoryItemWithId[];
   onConsume: (id: string) => void;
+  onDelete: (id: string) => void;
   onItemClick: (item: InventoryItemWithId) => void;
   consumingId?: string;
 }
@@ -13,6 +14,7 @@ interface InventoryListProps {
 export default function InventoryList({
   items,
   onConsume,
+  onDelete,
   onItemClick,
   consumingId,
 }: InventoryListProps) {
@@ -53,6 +55,7 @@ export default function InventoryList({
           key={item.id}
           item={item}
           onConsume={onConsume}
+          onDelete={onDelete}
           onClick={onItemClick}
           isConsuming={consumingId === item.id}
         />

@@ -156,6 +156,7 @@ export default function InventoryPage() {
         <InventoryList
           items={inventories}
           onConsume={handleConsume}
+          onDelete={handleDelete}
           onItemClick={setSelectedItem}
           consumingId={consumingId}
         />

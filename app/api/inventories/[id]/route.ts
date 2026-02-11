@@ -29,6 +29,7 @@ export async function GET(
         quantityUnit: inventory.quantityUnit,
         expireDate: inventory.expireDate?.toISOString().split('T')[0] ?? null,
         consumeBy: inventory.consumeBy?.toISOString().split('T')[0] ?? null,
+        purchaseDate: inventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: inventory.note,
         imageUrl: inventory.imageUrl,
         isStaple: inventory.isStaple,
@@ -78,6 +79,14 @@ export async function PUT(
       );
     }
 
+    // 数量バリデーション: 1未満の値を拒否
+    if (body.quantityValue !== undefined && body.quantityValue < 1) {
+      return NextResponse.json(
+        { success: false, error: '数量は1以上で入力してください' },
+        { status: 400 }
+      );
+    }
+
     const updatedInventory = await prisma.inventory.update({
       where: { id },
       data: {
@@ -86,6 +95,7 @@ export async function PUT(
         quantityUnit: body.quantityUnit,
         expireDate: body.expireDate ? new Date(body.expireDate) : null,
         consumeBy: body.consumeBy ? new Date(body.consumeBy) : null,
+        purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
         note: body.note,
         ...(body.isStaple !== undefined && { isStaple: body.isStaple }),
       },
@@ -100,6 +110,7 @@ export async function PUT(
         quantityUnit: updatedInventory.quantityUnit,
         expireDate: updatedInventory.expireDate?.toISOString().split('T')[0] ?? null,
         consumeBy: updatedInventory.consumeBy?.toISOString().split('T')[0] ?? null,
+        purchaseDate: updatedInventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: updatedInventory.note,
         imageUrl: updatedInventory.imageUrl,
         isStaple: updatedInventory.isStaple,

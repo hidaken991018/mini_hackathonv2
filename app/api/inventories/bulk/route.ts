@@ -10,6 +10,7 @@ type InventoryItemInput = {
   quantityUnit?: string;
   expireDate?: string;
   consumeBy?: string;
+  purchaseDate?: string;
   note?: string;
   isStaple?: boolean;
 };
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
             quantityUnit: item.quantityUnit,
             expireDate: item.expireDate ? new Date(item.expireDate) : null,
             consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
+            purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : null,
             note: item.note,
             isStaple: item.isStaple ?? false,
           },

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       quantityUnit: inv.quantityUnit,
       expireDate: inv.expireDate?.toISOString().split('T')[0] ?? null,
       consumeBy: inv.consumeBy?.toISOString().split('T')[0] ?? null,
+      purchaseDate: inv.purchaseDate?.toISOString().split('T')[0] ?? null,
       note: inv.note,
       imageUrl: inv.imageUrl,
       isStaple: inv.isStaple,

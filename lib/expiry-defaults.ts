@@ -54,6 +54,13 @@ const FOOD_CATEGORIES: FoodCategory[] = [
     defaultConsumeDays: 5,
   },
   {
+    name: '実もの野菜',
+    keywords: ['トマト', 'ミニトマト', 'きゅうり', 'キュウリ', 'なす', 'ナス', 'ピーマン', 'パプリカ', 'ズッキーニ', 'オクラ', 'おくら', 'とうもろこし', 'コーン', '枝豆', 'えだまめ', 'さやいんげん', 'インゲン', 'いんげん', 'ゴーヤ', 'ゴーヤー', 'そら豆', 'スナップエンドウ'],
+    expiryType: 'freshness',
+    defaultExpireDays: 5,
+    defaultConsumeDays: 7,
+  },
+  {
     name: 'パン',
     keywords: ['パン', '食パン', 'ベーグル', 'クロワッサン', 'ロールパン', 'バゲット'],
     expiryType: 'consume_by',

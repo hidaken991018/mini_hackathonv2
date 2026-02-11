@@ -7,6 +7,7 @@ import { getExpiryType, EXPIRY_TYPE_SHORT_LABELS } from '@/lib/expiry-defaults';
 interface InventoryItemProps {
   item: InventoryItemWithId;
   onConsume: (id: string) => void;
+  onDelete: (id: string) => void;
   onClick: (item: InventoryItemWithId) => void;
   isConsuming?: boolean;
 }
@@ -14,6 +15,7 @@ interface InventoryItemProps {
 export default function InventoryItem({
   item,
   onConsume,
+  onDelete,
   onClick,
   isConsuming,
 }: InventoryItemProps) {
@@ -108,8 +110,28 @@ export default function InventoryItem({
               }
               return null;
             })()}
+            {/* 購入日表示: purchaseDateがあればそれを、なければcreatedAtをフォールバック表示 */}
+            <span className="text-xs text-gray-400">
+              購入: {item.purchaseDate || item.createdAt?.split('T')[0]}
+            </span>
           </div>
         </div>
+
+        {/* 削除ボタン */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm('この在庫を削除しますか？')) {
+              onDelete(item.id);
+            }
+          }}
+          className="flex-shrink-0 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors"
+          aria-label="削除"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
 
         {/* 消費ボタン */}
         <button
