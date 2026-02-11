@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import axiosInstance from '@/lib/axios';
 import { InventoryItem } from '@/types';
+import UnitSelector from './UnitSelector';
 
 export default function ReceiptUploadPanel() {
   const receiptInputRef = useRef<HTMLInputElement>(null);
@@ -349,18 +350,17 @@ export default function ReceiptUploadPanel() {
                             placeholder="数量"
                             className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
-                          <input
-                            type="text"
+                          <UnitSelector
                             value={item.quantityUnit || ''}
-                            onChange={(e) =>
+                            onChange={(unit) =>
                               handleUpdateItem(
                                 index,
                                 'quantityUnit',
-                                e.target.value || undefined
+                                unit || undefined
                               )
                             }
                             placeholder="単位"
-                            className="w-16 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            className="w-20"
                           />
                         </div>
                         <button

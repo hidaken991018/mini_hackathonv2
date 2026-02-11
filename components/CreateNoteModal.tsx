@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import axiosInstance from '@/lib/axios';
 import { ReceiptAnalysisResult, InventoryItem } from '@/types';
+import UnitSelector from './UnitSelector';
 
 // ローカル在庫型
 type LocalInventory = {
@@ -407,18 +408,17 @@ export default function CreateNoteModal({
                             placeholder="数量"
                             className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
-                          <input
-                            type="text"
+                          <UnitSelector
                             value={item.quantityUnit || ''}
-                            onChange={(e) =>
+                            onChange={(unit) =>
                               handleUpdateItem(
                                 index,
                                 'quantityUnit',
-                                e.target.value || undefined
+                                unit || undefined
                               )
                             }
                             placeholder="単位"
-                            className="w-16 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            className="w-20"
                           />
                         </div>
                       </div>
