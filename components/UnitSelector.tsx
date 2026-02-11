@@ -55,6 +55,8 @@ export default function UnitSelector({
   const [isOpen, setIsOpen] = useState(false);
   // 入力フィールドに表示するテキスト（フィルタリング用）
   const [inputText, setInputText] = useState(value);
+  // ユーザーがフィルタ入力を開始したか（開いた直後は全件表示するため）
+  const [isFiltering, setIsFiltering] = useState(false);
   // キーボードでハイライトされているインデックス
   const [highlightIndex, setHighlightIndex] = useState(-1);
 
@@ -70,7 +72,10 @@ export default function UnitSelector({
   }, [value, isOpen]);
 
   // フィルタリングされた単位リスト（カテゴリ付き）
+  // isFiltering=false（開いた直後）は全件表示、ユーザーが入力し始めたらフィルタ
   const filteredGroups = useMemo(() => {
+    if (!isFiltering) return UNIT_GROUPS;
+
     const query = inputText.toLowerCase().trim();
     if (!query) return UNIT_GROUPS;
 
@@ -78,7 +83,7 @@ export default function UnitSelector({
       ...group,
       units: group.units.filter((unit) => unit.toLowerCase().includes(query)),
     })).filter((group) => group.units.length > 0);
-  }, [inputText]);
+  }, [inputText, isFiltering]);
 
   // フィルタリング後のフラットなリスト（キーボード操作用）
   const flatFiltered = useMemo(
@@ -116,6 +121,7 @@ export default function UnitSelector({
     onChange(unit);
     setInputText(unit);
     setIsOpen(false);
+    setIsFiltering(false);
     setHighlightIndex(-1);
   }
 
@@ -128,6 +134,7 @@ export default function UnitSelector({
       setInputText(value);
     }
     setIsOpen(false);
+    setIsFiltering(false);
     setHighlightIndex(-1);
   }
 
@@ -182,11 +189,13 @@ export default function UnitSelector({
         value={inputText}
         onChange={(e) => {
           setInputText(e.target.value);
+          setIsFiltering(true);
           setHighlightIndex(-1);
           if (!isOpen) setIsOpen(true);
         }}
         onFocus={() => {
           setIsOpen(true);
+          setIsFiltering(false); // 開いた直後は全件表示
           // フォーカス時にテキストを全選択して上書きしやすくする
           inputRef.current?.select();
         }}

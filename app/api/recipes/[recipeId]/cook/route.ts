@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { calculateRemainingQuantity, canConvert } from '@/lib/units';
+import { calculateRemainingQuantity, normalizeUnit } from '@/lib/units';
 
 export const dynamic = 'force-dynamic'
 
@@ -100,23 +100,50 @@ export async function POST(
           );
 
           if (remaining === null) {
-            // 単位変換不可の場合は従来の単純減算にフォールバック
-            const newQty = currentQty - consumeQty;
-            if (newQty <= 0) {
-              await tx.inventory.delete({
-                where: { id: inventory.id },
-              });
-              deletedInventoryIds.push(inventory.id);
+            // 単位変換不可の場合: 単位カテゴリを確認して安全に処理する
+            // 例: 在庫「牛乳 1本」(COUNT) vs レシピ「200ml」(VOLUME) → 換算不可
+            // 以前の処理: 1 - 200 = -199 → 不正な全削除（バグ）
+            const invCategory = normalizeUnit(inventoryUnit).category;
+            const ingCategory = normalizeUnit(ingredientUnit).category;
+
+            if (invCategory === ingCategory) {
+              // 同カテゴリだが換算不可（例: 異なるCOUNT単位同士）→ 1つ消費
+              const newQty = currentQty - 1;
+              if (newQty <= 0) {
+                await tx.inventory.delete({ where: { id: inventory.id } });
+                deletedInventoryIds.push(inventory.id);
+              } else {
+                await tx.inventory.update({
+                  where: { id: inventory.id },
+                  data: { quantityValue: newQty },
+                });
+                updatedInventories.push({
+                  id: inventory.id,
+                  name: inventory.name,
+                  remaining: newQty,
+                });
+              }
+            } else if (invCategory === 'COUNT') {
+              // 在庫がCOUNT（本,パック等）、レシピがMASS/VOLUME（g,ml等）
+              // → COUNT在庫を1つ消費する（「牛乳1本を使った」と解釈）
+              const newQty = currentQty - 1;
+              if (newQty <= 0) {
+                await tx.inventory.delete({ where: { id: inventory.id } });
+                deletedInventoryIds.push(inventory.id);
+              } else {
+                await tx.inventory.update({
+                  where: { id: inventory.id },
+                  data: { quantityValue: newQty },
+                });
+                updatedInventories.push({
+                  id: inventory.id,
+                  name: inventory.name,
+                  remaining: newQty,
+                });
+              }
             } else {
-              await tx.inventory.update({
-                where: { id: inventory.id },
-                data: { quantityValue: newQty },
-              });
-              updatedInventories.push({
-                id: inventory.id,
-                name: inventory.name,
-                remaining: newQty,
-              });
+              // 在庫がMASS/VOLUME、レシピがCOUNTなど → 換算不可のためスキップ
+              // 在庫は変更しない（ユーザーに手動管理を任せる）
             }
           } else if (remaining.value <= 0) {
             // 在庫がなくなったら削除
