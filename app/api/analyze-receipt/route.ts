@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
+import { getDefaultExpiryDates } from '@/lib/expiry-defaults';
+import { isStapleFood } from '@/lib/food-category';
 
 export const dynamic = 'force-dynamic'
 
@@ -46,8 +48,8 @@ export async function POST(request: NextRequest) {
                     description: '食材・食品・飲料の名前（日用品は含めない）',
                   },
                   quantityValue: {
-                    type: SchemaType.NUMBER,
-                    description: '購入パッケージ単位での数量（例: 卵10個入り→10、牛乳1本→1、ビール350ml缶→1）',
+                    type: SchemaType.INTEGER,
+                    description: '購入パッケージ単位での数量を整数で返す（例: 卵10個入り→10、牛乳1本→1、バター200g→200）',
                     nullable: true,
                   },
                   quantityUnit: {
@@ -65,8 +67,12 @@ export async function POST(request: NextRequest) {
                     description: '消費期限（YYYY-MM-DD形式）。レシートに記載がなければnull。',
                     nullable: true,
                   },
+                  isStaple: {
+                    type: SchemaType.BOOLEAN,
+                    description: '常備品（調味料・油・バター等、少量ずつ長期間使うもの）ならtrue、使い切り食材（肉・魚・野菜等）ならfalse',
+                  },
                 },
-                required: ['name'],
+                required: ['name', 'isStaple'],
               },
               description: 'レシートから抽出された食材・食品・飲料リスト（日用品は除外）',
             },
@@ -105,33 +111,45 @@ export async function POST(request: NextRequest) {
 - 飲料（牛乳、ジュース、お茶、水、酒類等）
 - お菓子・スナック類
 
-【数量の記録ルール - 非常に重要】
+【食材の分類ルール - 非常に重要】
+各食材を「常備品」か「使い切り食材」に分類してください。
+
+■ 常備品（isStaple: true）- 調理で少量ずつ使い、1回では使い切らないもの
+  - 調味料: 醤油、味噌、塩、砂糖、酢、みりん、料理酒、ソース、ケチャップ、マヨネーズ等
+  - 油脂類: バター、オリーブオイル、サラダ油、ごま油等
+  - 粉類: 小麦粉、片栗粉、パン粉等
+  - スパイス: こしょう、カレー粉等
+  - 常備品は必ず quantityValue: 1, quantityUnit: "個" または "本" で登録
+  - 商品名の重量表記（例: バター200g）はパッケージ仕様であり、数量ではない
+
+■ 使い切り食材（isStaple: false）- 1回の調理でまとめて使い切るもの
+  - 肉、魚、野菜、果物、卵、豆腐、パン、牛乳、ヨーグルト等
+  - 実際の購入数量をパッケージ単位で記録
+
+【数量の記録ルール】
 数量は「購入時のパッケージ単位（自然な購入単位）」で記録してください。
-グラム(g)やミリリットル(ml)での記録は避け、パッケージ単位を使います。
 
 具体例:
-- ブロッコリー1株 → quantityValue: 1, quantityUnit: "株"（×496gとしない）
-- にんじん3本入り → quantityValue: 3, quantityUnit: "本"
-- 牛乳1L → quantityValue: 1, quantityUnit: "本"（×1000mlとしない）
-- ビール350ml缶 → quantityValue: 1, quantityUnit: "本"（×350mlとしない）
-- 卵10個入り → quantityValue: 10, quantityUnit: "個"
-- 豚バラ肉 → quantityValue: 1, quantityUnit: "パック"（×200gとしない）
-- 食パン6枚切り → quantityValue: 1, quantityUnit: "袋"
-- バナナ1房 → quantityValue: 1, quantityUnit: "房"
-- ほうれん草 → quantityValue: 1, quantityUnit: "束"
-- ヨーグルト400g → quantityValue: 400, quantityUnit: "g"（内容量をそのまま使用）
-- クリームチーズ200g → quantityValue: 200, quantityUnit: "g"（内容量をそのまま使用）
+■ 常備品の例（isStaple: true）:
+- 雪印北海道バター(200g) → name: "北海道バター", quantityValue: 1, quantityUnit: "個", isStaple: true
+  （200gは商品の仕様であり購入数量ではない。1個として登録）
+- BOSCOオリーブオイル → quantityValue: 1, quantityUnit: "本", isStaple: true
+- キッコーマン醤油1L → quantityValue: 1, quantityUnit: "本", isStaple: true
+
+■ 使い切り食材の例（isStaple: false）:
+- 国産牛肩ロース薄切り → quantityValue: 1, quantityUnit: "パック", isStaple: false
+- レタス(1個) → quantityValue: 1, quantityUnit: "個", isStaple: false
+- トマト(3個入) → quantityValue: 3, quantityUnit: "個", isStaple: false
+- 卵10個入り → quantityValue: 10, quantityUnit: "個", isStaple: false
+- 牛乳1L → quantityValue: 1, quantityUnit: "本", isStaple: false
 
 使用する単位: 個、本、パック、袋、房、束、枚、玉、株
-g/ml/kg/Lは以下の場合に使用してください：
-- 調味料（砂糖1kg、醤油1L等）
-- 乳製品で内容量表記のもの（ヨーグルト400g、クリームチーズ200g等）
-- 上記以外の食材はパッケージ単位を使用
 
 各食材について以下の情報を抽出してください：
 - name: 食材名（例: 卵、りんご、牛乳）
-- quantityValue: 数量の数値（パッケージ単位での数量）
+- quantityValue: 数量の数値（整数のみ。小数は使わず、必ず整数で返すこと）
 - quantityUnit: 単位（個、本、パック、袋、房、束、枚など）
+- isStaple: 常備品ならtrue、使い切り食材ならfalse
 - expireDate: 賞味期限（YYYY-MM-DD形式）。レシートや商品に記載がある場合のみ。
 - consumeBy: 消費期限（YYYY-MM-DD形式）。レシートや商品に記載がある場合のみ。
 
@@ -152,8 +170,39 @@ g/ml/kg/Lは以下の場合に使用してください：
 
     // 構造化出力により、text()は既にJSON文字列として返される
     try {
-      const analysisResult = JSON.parse(text);
-      const items = analysisResult.items || [];
+      // Geminiが異常に長い数値（数千桁の浮動小数点）を返す場合があるため、
+      // 16文字以上の数値列をJavaScriptのNumber型で安全な精度に変換する
+      const sanitizedText = text.replace(
+        /-?\d[\d.]{15,}/g,
+        (match) => String(Number(match) || 0)
+      );
+      const analysisResult = JSON.parse(sanitizedText);
+
+      // 後処理: 常備品フラグのダブルチェック + デフォルト期限の自動設定
+      const items = (analysisResult.items || []).map(
+        (item: {
+          name: string;
+          quantityValue?: number;
+          quantityUnit?: string;
+          expireDate?: string;
+          consumeBy?: string;
+          isStaple?: boolean;
+        }) => {
+          // Geminiの判定が不正確な場合、キーワード辞書でフォールバック判定
+          const staple = item.isStaple === true || isStapleFood(item.name);
+          const processed = { ...item, isStaple: staple };
+
+          // 生鮮食材のみ、食材カテゴリ別のデフォルト期限を自動設定
+          // 常備品・調味料等は期限を設定しない（手動入力に任せる）
+          if (!staple && !processed.expireDate && !processed.consumeBy) {
+            const defaults = getDefaultExpiryDates(processed.name);
+            if (defaults.expireDate || defaults.consumeBy) {
+              return { ...processed, expireDate: defaults.expireDate, consumeBy: defaults.consumeBy };
+            }
+          }
+          return processed;
+        },
+      );
 
       // 後方互換性のため、文字列形式の ingredients も生成
       const ingredients = items.map(

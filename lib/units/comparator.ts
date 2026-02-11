@@ -248,8 +248,17 @@ export function calculateRemainingQuantity(
 }
 
 /**
- * 在庫アイテムのスマート消費情報を取得する
- * @param quantityValue 現在の数量（null/undefinedの場合は1として扱う）
+ * 在庫アイテムのクイック消費情報を取得する
+ *
+ * 消費量は quantityUnit のカテゴリのみで決定される:
+ *   - COUNT系（個、本、パック等）→ 1 消費
+ *   - MASS系（g → 100, kg → 0.1）→ 100g相当を消費
+ *   - VOLUME系（ml → 100, L → 0.1）→ 100ml相当を消費
+ *
+ * quantityValue は「残量 ≤ 消費単位」のとき全量消費（→削除）を判定するために使用。
+ * 任意の数量変更は編集モーダル（InventoryEditModal）で対応。
+ *
+ * @param quantityValue 現在の残量（null/undefinedの場合は1として扱う）
  * @param quantityUnit 単位文字列（null/undefinedの場合は「個」として扱う）
  * @returns consumeAmount: 消費する量, buttonLabel: ボタン表示文字列, willDelete: 消費後に削除されるか
  */

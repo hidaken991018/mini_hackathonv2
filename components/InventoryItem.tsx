@@ -77,6 +77,11 @@ export default function InventoryItem({
               {displayValue}
               {displayUnit}
             </span>
+            {item.isStaple && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">
+                常備品
+              </span>
+            )}
             {item.expireDate && (
               <span className={`text-xs ${getDateColor()}`}>
                 賞味: {item.expireDate}

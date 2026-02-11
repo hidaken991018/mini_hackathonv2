@@ -31,6 +31,7 @@ export async function GET(
         consumeBy: inventory.consumeBy?.toISOString().split('T')[0] ?? null,
         note: inventory.note,
         imageUrl: inventory.imageUrl,
+        isStaple: inventory.isStaple,
         createdAt: inventory.createdAt.toISOString(),
         updatedAt: inventory.updatedAt.toISOString(),
       },
@@ -86,6 +87,7 @@ export async function PUT(
         expireDate: body.expireDate ? new Date(body.expireDate) : null,
         consumeBy: body.consumeBy ? new Date(body.consumeBy) : null,
         note: body.note,
+        ...(body.isStaple !== undefined && { isStaple: body.isStaple }),
       },
     });
 
@@ -100,6 +102,7 @@ export async function PUT(
         consumeBy: updatedInventory.consumeBy?.toISOString().split('T')[0] ?? null,
         note: updatedInventory.note,
         imageUrl: updatedInventory.imageUrl,
+        isStaple: updatedInventory.isStaple,
         createdAt: updatedInventory.createdAt.toISOString(),
         updatedAt: updatedInventory.updatedAt.toISOString(),
       },

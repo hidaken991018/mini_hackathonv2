@@ -11,6 +11,7 @@ type InventoryItemInput = {
   expireDate?: string;
   consumeBy?: string;
   note?: string;
+  isStaple?: boolean;
 };
 
 export async function POST(request: NextRequest) {
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
             expireDate: item.expireDate ? new Date(item.expireDate) : null,
             consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
             note: item.note,
+            isStaple: item.isStaple ?? false,
           },
         })
       )

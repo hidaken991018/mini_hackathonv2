@@ -119,7 +119,7 @@ export default function ReceiptUploadPanel() {
   const handleUpdateItem = (
     index: number,
     field: keyof InventoryItem,
-    value: string | number | undefined
+    value: string | number | boolean | undefined
   ) => {
     setPreviewItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
@@ -363,6 +363,20 @@ export default function ReceiptUploadPanel() {
                             className="w-16 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
                         </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateItem(index, 'isStaple', !item.isStaple)
+                          }
+                          className={`flex-shrink-0 px-2 py-1.5 text-xs rounded-lg border transition-colors ${
+                            item.isStaple
+                              ? 'bg-amber-50 border-amber-300 text-amber-700'
+                              : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                          }`}
+                          title={item.isStaple ? '常備品（調理で減らない）' : '使い切り（調理で減る）'}
+                        >
+                          {item.isStaple ? '常備品' : '使い切り'}
+                        </button>
                       </div>
 
                       <div className="flex items-center gap-2 text-xs">

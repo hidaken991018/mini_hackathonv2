@@ -43,6 +43,10 @@ export async function POST(
       quantityValue: number | null;
       quantityUnit: string | null;
     }[] = [];
+    const skippedStapleIngredients: {
+      name: string;
+      reason: string;
+    }[] = [];
     const deletedInventoryIds: string[] = [];
     const updatedInventories: { id: string; name: string; remaining: number }[] = [];
 
@@ -69,6 +73,15 @@ export async function POST(
         }
 
         if (inventory) {
+          // 常備品（バター、油、調味料等）は調理時に在庫を減らさない
+          if (inventory.isStaple) {
+            skippedStapleIngredients.push({
+              name: ingredient.name,
+              reason: '常備品のため在庫を減らしませんでした',
+            });
+            continue;
+          }
+
           const currentQty = inventory.quantityValue || 0;
           const consumeQty = ingredient.quantityValue || 0;
           const inventoryUnit = inventory.quantityUnit || '';
@@ -133,6 +146,7 @@ export async function POST(
         recipeId,
         recipeTitle: recipe.title,
         consumedIngredients,
+        skippedStapleIngredients,
         deletedInventoryIds,
         updatedInventories,
       },

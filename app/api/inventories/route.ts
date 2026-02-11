@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       consumeBy: inv.consumeBy?.toISOString().split('T')[0] ?? null,
       note: inv.note,
       imageUrl: inv.imageUrl,
+      isStaple: inv.isStaple,
       createdAt: inv.createdAt.toISOString(),
       updatedAt: inv.updatedAt.toISOString(),
     }));

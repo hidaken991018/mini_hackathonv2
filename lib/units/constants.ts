@@ -189,7 +189,7 @@ export const INGREDIENT_DENSITIES: IngredientDensity[] = [
   { name: 'ベーキングパウダー', densityGPerMl: 0.8, aliases: ['BP'] },
 
   // その他
-  { name: 'バター', densityGPerMl: 0.95 },
+  { name: 'バター', densityGPerMl: 0.95, aliases: ['無塩バター', '有塩バター', 'マーガリン'] },
   { name: 'ヨーグルト', densityGPerMl: 1.05, aliases: ['プレーンヨーグルト'] },
 ];
 
