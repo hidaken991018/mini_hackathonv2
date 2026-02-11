@@ -2,6 +2,7 @@
 
 import { InventoryItemWithId } from '@/types';
 import { getConsumeInfo } from '@/lib/units';
+import { getExpiryType, EXPIRY_TYPE_SHORT_LABELS } from '@/lib/expiry-defaults';
 
 interface InventoryItemProps {
   item: InventoryItemWithId;
@@ -82,16 +83,31 @@ export default function InventoryItem({
                 常備品
               </span>
             )}
-            {item.expireDate && (
-              <span className={`text-xs ${getDateColor()}`}>
-                賞味: {item.expireDate}
-              </span>
-            )}
-            {item.consumeBy && (
-              <span className={`text-xs ${getDateColor()}`}>
-                消費: {item.consumeBy}
-              </span>
-            )}
+            {/* 期限表示: カテゴリに応じて適切な1つだけを表示 */}
+            {(() => {
+              // consumeBy が設定されていれば消費期限として表示（ユーザーがトグルで選択した場合を含む）
+              if (item.consumeBy) {
+                return (
+                  <span className={`text-xs ${getDateColor()}`}>
+                    消費: {item.consumeBy}
+                  </span>
+                );
+              }
+              // expireDate が設定されていれば、カテゴリに応じてラベルを切り替え
+              if (item.expireDate) {
+                const detectedType = getExpiryType(item.name);
+                const label = detectedType
+                  ? EXPIRY_TYPE_SHORT_LABELS[detectedType]
+                  : EXPIRY_TYPE_SHORT_LABELS['best_before'];
+                const suffix = detectedType === 'freshness' ? '頃' : '';
+                return (
+                  <span className={`text-xs ${getDateColor()}`}>
+                    {label}: {item.expireDate}{suffix}
+                  </span>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
 
