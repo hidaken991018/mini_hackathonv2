@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
                   },
                   quantityValue: {
                     type: SchemaType.INTEGER,
-                    description: '購入パッケージ単位での数量を整数で返す（例: 卵10個入り→10、牛乳1本→1、バター200g→200）',
+                    description: '数量を整数で返す（例: 卵10個入り→10、牛乳1本→1、冷凍ブロッコリー300g→300、食パン6枚切り→6）',
                     nullable: true,
                   },
                   quantityUnit: {
                     type: SchemaType.STRING,
-                    description: '購入パッケージ単位（個、本、パック、袋、房、束、枚、玉、株。g/ml/kg/Lは調味料・乳製品のみ）',
+                    description: '単位（個、本、パック、袋、房、束、枚、玉、株、g、kg、ml、L）',
                     nullable: true,
                   },
                   expireDate: {
@@ -122,33 +122,65 @@ export async function POST(request: NextRequest) {
   - 常備品は必ず quantityValue: 1, quantityUnit: "個" または "本" で登録
   - 商品名の重量表記（例: バター200g）はパッケージ仕様であり、数量ではない
 
-■ 使い切り食材（isStaple: false）- 1回の調理でまとめて使い切るもの
-  - 肉、魚、野菜、果物、卵、豆腐、パン、牛乳、ヨーグルト等
-  - 実際の購入数量をパッケージ単位で記録
+■ 使い切り食材（isStaple: false）- 調理で消費される一般食材
+  - 肉、魚、野菜、果物、卵、豆腐、パン、牛乳、ヨーグルト、冷凍食品等
+  - 食材カテゴリに応じた最適な単位で記録する（下記ルール参照）
 
-【数量の記録ルール】
-数量は「購入時のパッケージ単位（自然な購入単位）」で記録してください。
+【数量の記録ルール - カテゴリ別】
+食材の種類ごとに「ユーザーが消費を把握しやすい単位」で記録してください。
 
-具体例:
-■ 常備品の例（isStaple: true）:
+■ 常備品の例（isStaple: true）— 必ず1個または1本:
 - 雪印北海道バター(200g) → name: "北海道バター", quantityValue: 1, quantityUnit: "個", isStaple: true
   （200gは商品の仕様であり購入数量ではない。1個として登録）
 - BOSCOオリーブオイル → quantityValue: 1, quantityUnit: "本", isStaple: true
 - キッコーマン醤油1L → quantityValue: 1, quantityUnit: "本", isStaple: true
 
-■ 使い切り食材の例（isStaple: false）:
-- 国産牛肩ロース薄切り → quantityValue: 1, quantityUnit: "パック", isStaple: false
-- レタス(1個) → quantityValue: 1, quantityUnit: "個", isStaple: false
-- トマト(3個入) → quantityValue: 3, quantityUnit: "個", isStaple: false
-- 卵10個入り → quantityValue: 10, quantityUnit: "個", isStaple: false
-- 牛乳1L → quantityValue: 1, quantityUnit: "本", isStaple: false
+■ 使い切り食材の例（isStaple: false）— カテゴリ別に単位を選ぶ:
 
-使用する単位: 個、本、パック、袋、房、束、枚、玉、株
+【冷凍野菜】→ パッケージの重量(g)をそのまま使う:
+- 冷凍ブロッコリー(300g) → quantityValue: 300, quantityUnit: "g"
+- 冷凍ほうれん草(200g) → quantityValue: 200, quantityUnit: "g"
+- 冷凍枝豆(400g) → quantityValue: 400, quantityUnit: "g"
+
+【冷凍おかず・冷凍食品】→ 袋または個:
+- 冷凍餃子(12個入) → quantityValue: 1, quantityUnit: "袋"
+- 冷凍チャーハン → quantityValue: 1, quantityUnit: "袋"
+
+【ヨーグルト】→ サイズで判断:
+- 大容量ヨーグルト(400g) → quantityValue: 400, quantityUnit: "g"（少しずつ食べるため重さで管理）
+- 個装ヨーグルト(4個パック) → quantityValue: 4, quantityUnit: "個"（1個ずつ食べるため個数で管理）
+
+【食パン】→ 枚数:
+- 食パン6枚切り → quantityValue: 6, quantityUnit: "枚"
+- 食パン8枚切り → quantityValue: 8, quantityUnit: "枚"
+
+【牛乳・飲料】→ 本:
+- 牛乳1L → quantityValue: 1, quantityUnit: "本"
+- 牛乳500ml → quantityValue: 1, quantityUnit: "本"
+- ジュース → quantityValue: 1, quantityUnit: "本"
+
+【肉・魚】→ パック:
+- 国産牛肩ロース薄切り → quantityValue: 1, quantityUnit: "パック"
+- 鶏むね肉 → quantityValue: 1, quantityUnit: "パック"
+- サーモン刺身 → quantityValue: 1, quantityUnit: "パック"
+
+【野菜・果物】→ 自然な個数単位:
+- レタス → quantityValue: 1, quantityUnit: "個"
+- ネギ → quantityValue: 1, quantityUnit: "本"
+- ほうれん草 → quantityValue: 1, quantityUnit: "束"
+- トマト(3個入) → quantityValue: 3, quantityUnit: "個"
+- バナナ → quantityValue: 1, quantityUnit: "房"
+- 玉ねぎ → quantityValue: 1, quantityUnit: "玉"
+
+【卵】→ 個数:
+- 卵10個入り → quantityValue: 10, quantityUnit: "個"
+
+使用する単位: 個、本、パック、袋、房、束、枚、玉、株、g、kg、ml、L
 
 各食材について以下の情報を抽出してください：
 - name: 食材名（例: 卵、りんご、牛乳）
 - quantityValue: 数量の数値（整数のみ。小数は使わず、必ず整数で返すこと）
-- quantityUnit: 単位（個、本、パック、袋、房、束、枚など）
+- quantityUnit: 単位（個、本、パック、袋、房、束、枚、g、kg、ml、Lなど）
 - isStaple: 常備品ならtrue、使い切り食材ならfalse
 - expireDate: 賞味期限（YYYY-MM-DD形式）。レシートや商品に記載がある場合のみ。
 - consumeBy: 消費期限（YYYY-MM-DD形式）。レシートや商品に記載がある場合のみ。
