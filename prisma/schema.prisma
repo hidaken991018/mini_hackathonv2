@@ -22,6 +22,7 @@ model User {
 
   inventories   Inventory[]
   notifications Notification[]
+  recipes       Recipe[]
 
   @@map("users")
 }
@@ -78,17 +79,23 @@ model Notification {
 // レシピ
 model Recipe {
   id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  sourceType  String   @default("ai_generated") @map("source_type") // ai_generated | user_created
   title       String
+  description String?
   imageUrl    String?  @map("image_url")
   cookingTime String?  @map("cooking_time")
   servings    String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  user          User?              @relation(fields: [userId], references: [id])
   notifications Notification[]
   ingredients   RecipeIngredient[]
   steps         RecipeStep[]
 
+  @@index([userId, updatedAt(sort: Desc)], name: "recipes_user_updated_at_idx")
+  @@index([sourceType], name: "recipes_source_type_idx")
   @@map("recipes")
 }
 

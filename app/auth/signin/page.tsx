@@ -15,9 +15,9 @@ export default function SignInPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // すでにログイン済みの場合は /input にリダイレクト
+    // すでにログイン済みの場合は /notifications にリダイレクト
     if (user && !loading) {
-      router.push("/input");
+      router.push("/notifications");
     }
   }, [user, loading, router]);
 

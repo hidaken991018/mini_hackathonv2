@@ -4,20 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-レシート、冷蔵庫の写真、メモを記録し、AIチャットと通知機能を備えたNext.jsアプリケーション。食材在庫の管理とAIによるレシピ提案を支援する。
+レシート画像をAIで解析し、食材在庫を管理、在庫に基づいたレシピ提案を行うNext.jsアプリケーション。
 
 **主要機能:**
-- 入力/収集: レシート、冷蔵庫の写真、テキストメモを保存
+- 入力: レシート画像をGemini AIで解析→食材を在庫に一括登録
+- 在庫管理: 食材の数量・賞味期限の管理、消費操作
 - AIチャット: 在庫食材に基づいた献立相談
-- 通知: レシピ提案や在庫アラートの受信
+- 通知: AIレシピ提案、賞味期限アラートの受信
 
 ## コマンド
 
 ```bash
-npm run dev      # 開発サーバー起動 (localhost:3000)
-npm run build    # 本番ビルド
-npm run start    # 本番サーバー起動
-npm run lint     # ESLint実行
+npm run dev          # 開発サーバー起動 (localhost:3000)
+npm run build        # 本番ビルド
+npm run start        # 本番サーバー起動
+npm run lint         # ESLint実行
+npm run test         # Jest テスト実行
+npm run test:watch   # テストをウォッチモードで実行
 ```
 
 ## データベースコマンド
@@ -37,108 +40,121 @@ npm run db:seed      # シードデータ投入
 - **フレームワーク:** Next.js 14.2.5 (App Router)
 - **言語:** TypeScript (strictモード)
 - **スタイリング:** Tailwind CSS
-- **データベース:** Prisma + SQLite (実装済み)
-- **AI統合:** Google Generative AI (Gemini 2.0 Flash)
-- **HTTP クライアント:** Axios
+- **データベース:** Prisma + SQLite (`prisma/dev.db`)
+- **認証:** Firebase Auth (クライアント) + Firebase Admin SDK (サーバー)
+- **AI統合:** Google Generative AI (Gemini 2.0 Flash: テキスト/構造化出力, Gemini 3 Pro Image Preview: 画像生成)
+- **テスト:** Jest + Testing Library (`__tests__/`)
 
 ### ディレクトリ構成
 - `app/` - Next.js App Routerのページとレイアウト
-  - `app/api/` - APIルート（レシート解析、在庫管理、通知、レシピ生成）
-  - `app/input/`, `app/chat/`, `app/notifications/` - 3つのメインページ
-- `components/` - 再利用可能なReactコンポーネント（12コンポーネント）
-- `lib/` - Prismaシングルトンなどのユーティリティ
-- `prisma/` - データベーススキーマとシード
+  - `app/api/` - APIルート（レシート解析、在庫CRUD、通知、レシピ生成、認証）
+  - `app/input/`, `app/inventory/`, `app/chat/`, `app/notifications/` - 4つのメインページ
+  - `app/auth/signin/` - Firebase サインインページ
+- `components/` - 再利用可能なReactコンポーネント
+- `contexts/` - React Context (`AuthContext.tsx`: Firebase認証状態)
+- `lib/` - ユーティリティ（Prisma, Firebase, Axios, 画像保存, 認証ヘルパー）
+- `prisma/` - データベーススキーマ、マイグレーション、シード
 - `types/` - TypeScript型定義
 
 ### 重要ファイル
 - `app/page.tsx` - ルートページ（`/input`へリダイレクト）
-- `app/input/page.tsx`, `app/chat/page.tsx`, `app/notifications/page.tsx` - 各ページが独立した状態管理
-- `types/index.ts` - 中央型定義 (InventoryItem, Message, Notification, Recipe, RecipeStep)
-- `lib/prisma.ts` - Prismaクライアントシングルトン
+- `app/input/page.tsx` - レシート画像解析→在庫登録
+- `app/inventory/page.tsx` - 在庫一覧・編集・消費
+- `app/chat/page.tsx` - AIチャット
+- `app/notifications/page.tsx` - 通知一覧・レシピモーダル
+- `contexts/AuthContext.tsx` - Firebase認証コンテキスト（`useAuth()`フック）
+- `lib/axios.ts` - Axiosインスタンス（Firebaseトークン自動注入）
+- `lib/auth-helpers.ts` - `requireAuth()` APIルート用認証ヘルパー
+- `lib/image-storage.ts` - 画像を`public/images/`に保存
+- `types/index.ts` - 中央型定義
 - `prisma/schema.prisma` - データベーススキーマ定義（6モデル）
 
 ### パターン
 - 全コンポーネントで`'use client'`ディレクティブ使用（クライアントサイドレンダリング）
-- **各ページが独立した状態管理** - ページ間で状態共有なし、必要に応じてlocalStorageを使用
+- **各ページが独立した状態管理** - ページ間で状態共有なし
+- **ページ間データ受け渡し**: `localStorage`キー `chatInitialMessage` でレシピ→チャットへコンテキスト転送
 - パスエイリアス: `@/*` はルートディレクトリにマップ
-- 画像はURL保存（外部ストレージ想定）
-- **認証**: Basic認証のスキャフォールドあり（middleware.ts）だが開発環境では無効、モックユーザーID `mock-user-001` を使用
-- **モーダルベースUI**: CreateNoteModal, NoteDetailModal, RecipeSlideModal
-- **楽観的UI更新**: 通知の既読状態などで使用
+- **モーダルベースUI**: RecipeSlideModal, InventoryEditModal, CreateNoteModal
+- **楽観的UI更新**: 通知の既読、在庫の消費操作で使用
 
-### 3タブUI構成
-1. **入力タブ:** ノートのCRUD（画像・タイムスタンプ付き）
-2. **チャットタブ:** ユーザー/アシスタントのメッセージ履歴
-3. **通知タブ:** グリッド表示とレシピモーダル
+### 4タブUI構成 (BottomNav.tsx)
+1. **入力タブ:** レシート画像アップロード→AI解析→在庫プレビュー→一括登録
+2. **在庫タブ:** 在庫一覧、数量消費(-1)、編集・削除
+3. **チャットタブ:** ユーザー/アシスタントのメッセージ履歴
+4. **通知タブ:** グリッド表示、レシピスライドモーダル、調理確認
+
+## 認証
+
+- **Firebase Auth**: Google OAuth + メール/パスワード
+- **フロントエンド**: `useAuth()`フック（`contexts/AuthContext.tsx`）でログイン状態管理
+- **APIリクエスト**: `lib/axios.ts`のインターセプターがFirebase IDトークンを`Authorization: Bearer {token}`ヘッダーに自動注入
+- **APIルート認証**: `lib/auth-helpers.ts`の`requireAuth(request)`でトークン検証→内部ユーザーID取得
+- **ユーザー同期**: ログイン時に`POST /api/auth/sync-user`でFirebase UIDとDBユーザーを紐付け
 
 ## 環境変数
 
-`.env.local`に以下を設定:
+`.env.example`に全変数のテンプレートあり。`.env.local`に設定:
 
 ```bash
-GEMINI_API_KEY=your_google_ai_api_key_here  # 必須: レシート解析とレシピ生成に使用
-DATABASE_URL="file:./prisma/dev.db"          # SQLite接続文字列
-```
+# Firebase (クライアント側) - 6変数
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 
-**認証関連（オプション、Vercelデプロイ時のみ）:**
-```bash
-BASIC_AUTH_USER=username
-BASIC_AUTH_PASSWORD=password
+# Firebase (サーバー側)
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Gemini AI (必須: レシート解析・レシピ生成)
+GEMINI_API_KEY=...
+
+# 期限通知API認証（任意）
+NOTIFY_SECRET=...
 ```
 
 ## APIルート
 
 ### レシート解析
-- `POST /api/analyze-receipt` - レシート画像から食材抽出（Gemini 2.0 Flash使用）
-  - Input: `{ imageData: string }` (base64)
-  - Output: `{ items: InventoryItem[] }`
+- `POST /api/analyze-receipt` - レシート画像から食材抽出（Gemini構造化出力）
 
-### 在庫管理
-- `POST /api/inventories/bulk` - 在庫一括登録（Prismaトランザクション使用）
-  - Input: `{ userId: string, items: InventoryItemInput[] }`
-  - Output: `{ createdCount: number, inventories: Inventory[] }`
+### 在庫管理 (Firebase認証必須)
+- `GET /api/inventories?userId={id}` - ユーザーの在庫一覧取得
+- `POST /api/inventories/bulk` - 在庫一括登録（`$transaction`使用）
+- `GET/PUT/DELETE /api/inventories/[id]` - 個別在庫のCRUD
+- `PATCH /api/inventories/[id]/consume` - 数量-1（0で自動削除）
 
-### 通知
-- `GET /api/notifications?userId={id}` - ユーザーの通知取得（レシピ詳細含む）
-- `PATCH /api/notifications/{id}/read` - 特定の通知を既読化
-- `PATCH /api/notifications/read-all` - 全通知を既読化
+### 通知 (Firebase認証必須)
+- `GET /api/notifications?userId={id}` - 通知取得（レシピ詳細含む）
+- `PATCH /api/notifications/[id]/read` - 既読化
+- `PATCH /api/notifications/read-all` - 全既読化
+- `POST /api/notifications/expiry` - 賞味期限通知生成（`x-notify-secret`ヘッダー認証、GitHub Actions cronから呼び出し）
 
-### レシピ
-- `POST /api/recipe/notify` - 在庫からレシピ生成（Gemini + ファジーマッチング）
-  - Input: `{ userId: string }`
-  - Output: `{ recipeId: string, title, ingredients, steps, ... }`
-- `POST /api/recipes/{recipeId}/cook` - レシピを調理済みに（使用した在庫を削除）
+### レシピ (Firebase認証必須)
+- `POST /api/recipe/notify` - 在庫からレシピ生成（Gemini + ファジーマッチング + 画像生成）
+- `POST /api/recipes/[recipeId]/cook` - 調理実行（使用した在庫の数量を減算、トランザクション）
 
 ### 認証
-- `GET /api/auth` - Basic認証エンドポイント（開発環境では無効）
+- `POST /api/auth/sync-user` - Firebaseトークン検証→ユーザーupsert
 
-## データベーススキーマ（実装済み）
+## データベーススキーマ
 
-**使用技術:** Prisma + SQLite (`prisma/dev.db`)
+Prisma + SQLite。詳細は`prisma/schema.prisma`と`DB_要件定義.md`を参照。
 
-詳細は`prisma/schema.prisma`と`DB_要件定義.md`を参照。主要エンティティ:
-- `users` - ユーザー識別
-- `inventories` - 食材（数量、賞味期限）
-- `notifications` - 通知（レシピ/在庫への参照）
-- `recipes`, `recipe_ingredients`, `recipe_steps` - レシピデータ
+主要エンティティ: `users`, `inventories`, `notifications`, `recipes`, `recipe_ingredients`, `recipe_steps`
 
 ## 主要なアーキテクチャパターン
 
 ### Gemini AI統合
-- **モデル**: Gemini 2.0 Flash (`gemini-2.0-flash-exp`)
-- **構造化出力**: `responseMimeType: 'application/json'` と `responseSchema` を使用して型安全なレスポンス
-- **レシート解析**: 画像から食材名、数量、単位、賞味期限を抽出
-- **レシピ生成**: 在庫リストからレシピを生成、ファジーマッチングで食材を紐付け
-
-### データフェッチング
-- **フロントエンド**: `fetch()` と `axios` の混在使用
-- **バックエンド**: Next.js APIルート + Prisma ORM
-- **キャッシング**: なし（各ページ訪問時に再取得）
-
-### ファジーマッチング
-- 正規化（小文字化、トリミング）後に部分文字列マッチング
-- レシピ材料と在庫の紐付けに使用（`isMatch()` 関数）
+- **テキスト/構造化出力**: `gemini-2.0-flash` — `responseMimeType: 'application/json'` + `responseSchema`で型安全なレスポンス
+- **画像生成**: `gemini-3-pro-image-preview` — レシピの料理写真・インフォグラフィック生成（`lib/image-storage.ts`で`public/images/`に保存）
+- **ファジーマッチング**: 正規化（小文字化、トリミング）後に部分文字列マッチングでレシピ材料と在庫を紐付け
 
 ### Prisma使用上の注意
-- **SQLite使用**: `createMany`非対応のため、`$transaction`で複数レコード作成
-- **接続**: `lib/prisma.ts`でシングルトンパターン使用
+- **SQLite**: `createMany`は在庫一括登録では非対応のため`$transaction`で代替（通知のexpiry APIでは使用）
+- **接続**: `lib/prisma.ts`でシングルトンパターン
+
+### GitHub Actions
+- `.github/workflows/expiry-notify.yml` - 賞味期限通知のスケジュール実行

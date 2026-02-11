@@ -2,7 +2,6 @@
 
 import { Notification } from '@/types';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
 
 interface RecipeSlideModalProps {
@@ -18,8 +17,6 @@ export default function RecipeSlideModal({
   onMarkAsRead,
   onCookComplete,
 }: RecipeSlideModalProps) {
-  const router = useRouter();
-
   // 調理機能の状態
   const [showCookConfirm, setShowCookConfirm] = useState(false);
   const [isCooking, setIsCooking] = useState(false);
@@ -287,40 +284,6 @@ export default function RecipeSlideModal({
             </div>
           </div>
         </div>
-
-        {/* AIチャットボタン（右下） */}
-        {notification.recipe && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              // レシピ情報をローカルストレージに保存
-              const initialMessage = {
-                id: '1',
-                role: 'assistant' as const,
-                content: `「${notification.title}」のレシピについて、何か質問や相談があればお気軽にどうぞ！\n\n例えば：\n- 材料の代用について\n- 調理のコツ\n- アレンジ方法\nなど、お手伝いします。`,
-              };
-              localStorage.setItem('chatInitialMessage', JSON.stringify(initialMessage));
-              // /chatページに遷移
-              router.push('/chat');
-            }}
-            className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center shadow-xl hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all duration-200 z-10"
-            aria-label="AIチャットを開く"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-          </button>
-        )}
 
         {/* 調理確認モーダル */}
         {showCookConfirm && notification.recipe && (

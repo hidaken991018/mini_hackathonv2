@@ -197,3 +197,6 @@ next-env.d.ts
 public/images/dishes/
 public/images/generated/
 public/images/infographics/
+
+# project plans
+plans/

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
+import { calculateRemainingQuantity, canConvert } from '@/lib/units';
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +71,8 @@ export async function POST(
         if (inventory) {
           const currentQty = inventory.quantityValue || 0;
           const consumeQty = ingredient.quantityValue || 0;
-          const newQty = currentQty - consumeQty;
+          const inventoryUnit = inventory.quantityUnit || '';
+          const ingredientUnit = ingredient.quantityUnit || '';
 
           consumedIngredients.push({
             name: ingredient.name,
@@ -78,22 +80,47 @@ export async function POST(
             quantityUnit: ingredient.quantityUnit,
           });
 
-          if (newQty <= 0) {
+          // 単位換算を使用して残量を計算
+          const remaining = calculateRemainingQuantity(
+            { value: currentQty, unit: inventoryUnit, name: inventory.name },
+            { value: consumeQty, unit: ingredientUnit, name: ingredient.name }
+          );
+
+          if (remaining === null) {
+            // 単位変換不可の場合は従来の単純減算にフォールバック
+            const newQty = currentQty - consumeQty;
+            if (newQty <= 0) {
+              await tx.inventory.delete({
+                where: { id: inventory.id },
+              });
+              deletedInventoryIds.push(inventory.id);
+            } else {
+              await tx.inventory.update({
+                where: { id: inventory.id },
+                data: { quantityValue: newQty },
+              });
+              updatedInventories.push({
+                id: inventory.id,
+                name: inventory.name,
+                remaining: newQty,
+              });
+            }
+          } else if (remaining.value <= 0) {
             // 在庫がなくなったら削除
             await tx.inventory.delete({
               where: { id: inventory.id },
             });
             deletedInventoryIds.push(inventory.id);
           } else {
-            // 数量を減算
+            // 数量を更新（単位換算後の値）
             await tx.inventory.update({
               where: { id: inventory.id },
-              data: { quantityValue: newQty },
+              data: { quantityValue: remaining.value },
             });
             updatedInventories.push({
               id: inventory.id,
               name: inventory.name,
-              remaining: newQty,
+              remaining: remaining.value,
             });
           }
         }
