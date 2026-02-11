@@ -28,8 +28,6 @@ type Candidate = {
   score: number;
 };
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const isMatch = (ingredient: string, inventory: string) => {
@@ -93,6 +91,8 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const inventories = await prisma.inventory.findMany({
       where: { userId },

@@ -10,7 +10,6 @@ npm-debug.log
 .git
 .gitignore
 .eslintrc.json
-tsconfig.json
 
 # Environment files (secrets should be set in Cloud Run)
 .env

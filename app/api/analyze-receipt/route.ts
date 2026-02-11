@@ -1,48 +1,43 @@
-import { VertexAI, GenerateContentRequest } from '@google-cloud/vertexai';
+import {
+  VertexAI,
+  GenerateContentRequest,
+  ResponseSchema,
+  SchemaType,
+} from '@google-cloud/vertexai';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// Vertex AI クライアントの初期化
-// Cloud Run 上では Application Default Credentials (ADC) で自動認証
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || '';
-const LOCATION = process.env.VERTEX_AI_LOCATION || 'asia-northeast1';
-
-const vertexAI = new VertexAI({
-  project: PROJECT_ID,
-  location: LOCATION,
-});
-
 // レスポンスの JSON Schema 定義
-const responseSchema = {
-  type: 'object' as const,
+const responseSchema: ResponseSchema = {
+  type: SchemaType.OBJECT,
   properties: {
     items: {
-      type: 'array' as const,
+      type: SchemaType.ARRAY,
       items: {
-        type: 'object' as const,
+        type: SchemaType.OBJECT,
         properties: {
           name: {
-            type: 'string' as const,
+            type: SchemaType.STRING,
             description: '食材・食品の名前',
           },
           quantityValue: {
-            type: 'number' as const,
+            type: SchemaType.NUMBER,
             description: '数量の数値部分（例: 6個なら6）',
             nullable: true,
           },
           quantityUnit: {
-            type: 'string' as const,
+            type: SchemaType.STRING,
             description: '数量の単位（例: 個、パック、ml、g）',
             nullable: true,
           },
           expireDate: {
-            type: 'string' as const,
+            type: SchemaType.STRING,
             description: '賞味期限（YYYY-MM-DD形式）。推論する。',
             nullable: false,
           },
           consumeBy: {
-            type: 'string' as const,
+            type: SchemaType.STRING,
             description: '消費期限（YYYY-MM-DD形式）。推論する。',
             nullable: false,
           },
@@ -57,6 +52,9 @@ const responseSchema = {
 
 export async function POST(request: NextRequest) {
   try {
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT?.trim();
+    const location = process.env.VERTEX_AI_LOCATION || 'asia-northeast1';
+
     // リクエストボディから画像データを取得
     const { imageData } = await request.json();
 
@@ -68,12 +66,18 @@ export async function POST(request: NextRequest) {
     }
 
     // プロジェクトIDの確認
-    if (!PROJECT_ID) {
+    if (!projectId) {
       return NextResponse.json(
         { error: 'GOOGLE_CLOUD_PROJECTが設定されていません' },
         { status: 500 }
       );
     }
+
+    // Cloud Build時に評価されないよう、リクエスト処理内で初期化する
+    const vertexAI = new VertexAI({
+      project: projectId,
+      location,
+    });
 
     // Gemini 2.0 Flash モデルを使用（画像解析に対応）
     // 構造化出力（Structured Output）を使用してJSON形式を保証

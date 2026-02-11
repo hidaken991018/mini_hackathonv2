@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
+  Auth,
   User,
   onAuthStateChanged,
   signInWithPopup,
@@ -11,7 +12,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -28,8 +29,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
 
   useEffect(() => {
+    try {
+      setAuth(getFirebaseAuth());
+    } catch (error) {
+      console.error('Failed to initialize Firebase Auth:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!auth) return;
+
     // Firebase Auth の状態監視
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
@@ -55,18 +68,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   const signInWithGoogle = async () => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUpWithEmail = async (email: string, password: string, name?: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     if (name) {
       await updateProfile(credential.user, { displayName: name });
@@ -74,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     await firebaseSignOut(auth);
   };
 

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { auth } from './firebase';
+import { getFirebaseAuth } from './firebase';
 
 const axiosInstance = axios.create({
   baseURL: '/',
@@ -8,6 +8,17 @@ const axiosInstance = axios.create({
 // リクエストインターセプター（すべてのリクエストにトークンを自動付与）
 axiosInstance.interceptors.request.use(
   async (config) => {
+    if (typeof window === 'undefined') {
+      return config;
+    }
+
+    let auth;
+    try {
+      auth = getFirebaseAuth();
+    } catch {
+      return config;
+    }
+
     const user = auth.currentUser;
     if (user) {
       const token = await user.getIdToken();
