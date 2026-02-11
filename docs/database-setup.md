@@ -1,4 +1,8 @@
-# データベース環境構築手順
+# データベース環境構築手順（ローカル Docker）
+
+このドキュメントはローカル開発用の Docker PostgreSQL 環境の構築手順です。
+
+> GCP Cloud SQL を使用する場合は [cloud-sql-setup.md](./cloud-sql-setup.md) を参照してください。
 
 ## 前提条件
 
