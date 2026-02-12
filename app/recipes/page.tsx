@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import BottomNav from '@/components/BottomNav';
 import RecipeCard from '@/components/RecipeCard';
 import RecipeCreateModal from '@/components/RecipeCreateModal';
+import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import { Recipe, RecipeListItem, RecipeSourceType } from '@/types';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import '@/lib/firebase';
@@ -341,6 +342,8 @@ export default function RecipesPage() {
           </div>
         )}
       </div>
+
+      <ReceiptUploadPanel launcherPositionClassName="bottom-40 right-6" />
 
       {/* FABボタン */}
       <button

@@ -201,6 +201,9 @@ public/images/infographics/
 # project plans
 plans/
 
+# Codex local imported skills (do not commit)
+.agents/skills/claude-*/
+
 # temp files
 .tmp_issues.json
 nul

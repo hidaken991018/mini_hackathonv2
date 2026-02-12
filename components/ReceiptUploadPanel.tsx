@@ -6,8 +6,17 @@ import { InventoryItem } from '@/types';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
 import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import InventoryManualAddModal from './InventoryManualAddModal';
 
-export default function ReceiptUploadPanel() {
+type ReceiptUploadPanelProps = {
+  launcherPositionClassName?: string;
+  onInventoryRegistered?: () => void;
+};
+
+export default function ReceiptUploadPanel({
+  launcherPositionClassName = 'bottom-20 right-4',
+  onInventoryRegistered,
+}: ReceiptUploadPanelProps) {
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -17,15 +26,24 @@ export default function ReceiptUploadPanel() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewItems, setPreviewItems] = useState<InventoryItem[]>([]);
   const [previewImageUrls, setPreviewImageUrls] = useState<string[]>([]);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [analysisFallbackMessage, setAnalysisFallbackMessage] = useState<string | null>(null);
 
   const handleReceiptClick = () => {
     if (isAnalyzing) return;
+    setAnalysisFallbackMessage(null);
     receiptInputRef.current?.click();
   };
 
   const handleCameraClick = () => {
     if (isAnalyzing) return;
+    setAnalysisFallbackMessage(null);
     cameraInputRef.current?.click();
+  };
+
+  const handleOpenManualModal = () => {
+    setAnalysisFallbackMessage(null);
+    setShowManualModal(true);
   };
 
   const handleReceiptChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +56,7 @@ export default function ReceiptUploadPanel() {
 
     const allItems: InventoryItem[] = [];
     const allImageUrls: string[] = [];
+    let hadAnalysisFailure = false;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -57,15 +76,24 @@ export default function ReceiptUploadPanel() {
           body: JSON.stringify({ imageData: imageUrl }),
         });
 
+        if (!response.ok) {
+          hadAnalysisFailure = true;
+          setAnalyzedCount(i + 1);
+          continue;
+        }
+
         const data = await response.json();
 
-        if (data.success && data.data.items) {
+        if (data.success && Array.isArray(data.data?.items)) {
           allItems.push(...data.data.items);
+        } else {
+          hadAnalysisFailure = true;
         }
 
         setAnalyzedCount(i + 1);
       } catch (error) {
         console.error(`Receipt analysis error for file ${i + 1}:`, error);
+        hadAnalysisFailure = true;
       }
     }
 
@@ -73,8 +101,12 @@ export default function ReceiptUploadPanel() {
       setPreviewItems(allItems);
       setPreviewImageUrls(allImageUrls);
       setShowPreview(true);
+      setAnalysisFallbackMessage(null);
     } else {
-      alert('レシート解析に失敗しました');
+      const fallbackMessage = hadAnalysisFailure
+        ? '文字欠けや読み取り失敗の可能性があります。手動入力してください。'
+        : 'レシートから食材を抽出できませんでした。手動入力してください。';
+      setAnalysisFallbackMessage(fallbackMessage);
     }
 
     setIsAnalyzing(false);
@@ -83,6 +115,9 @@ export default function ReceiptUploadPanel() {
 
     if (receiptInputRef.current) {
       receiptInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -100,6 +135,7 @@ export default function ReceiptUploadPanel() {
         setShowPreview(false);
         setPreviewItems([]);
         setPreviewImageUrls([]);
+        onInventoryRegistered?.();
 
         alert(`${response.data.data.createdCount}件の食材を在庫に登録しました`);
       } else {
@@ -195,40 +231,16 @@ export default function ReceiptUploadPanel() {
 
   return (
     <>
-      <div className="fixed bottom-20 right-4 z-30 flex items-center gap-3">
-        <button
-          onClick={handleReceiptClick}
-          disabled={isAnalyzing}
-          aria-label={
-            isAnalyzing
-              ? `レシートを読み取り中 (${analyzedCount}/${analyzingCount})`
-              : 'レシート画像を選択'
-          }
-          className={`w-14 h-14 rounded-full shadow-xl border transition-all duration-200 flex items-center justify-center ${
-            isAnalyzing
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'
-              : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:scale-105 active:scale-95'
-          }`}
-        >
-          {isAnalyzing ? (
-            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-          ) : (
+      <div className={`fixed z-30 flex flex-col items-end gap-2 ${launcherPositionClassName}`}>
+        <div className="rounded-2xl bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl p-2.5 flex flex-col gap-2">
+          <p className="text-[11px] font-semibold text-gray-500 px-1">在庫を追加</p>
+          <button
+            onClick={handleOpenManualModal}
+            aria-label="在庫を手動で追加"
+            className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5 text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -237,42 +249,122 @@ export default function ReceiptUploadPanel() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 0 012-2h2a2 0 012 2m-6 9l2 2 4-4"
+                d="M12 4v16m8-8H4"
               />
             </svg>
-          )}
-        </button>
-        <button
-          onClick={handleCameraClick}
-          disabled={isAnalyzing}
-          aria-label="カメラで撮影"
-          className={`w-14 h-14 rounded-full shadow-xl border transition-all duration-200 flex items-center justify-center ${
-            isAnalyzing
-              ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed'
-              : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50 hover:scale-105 active:scale-95'
-          }`}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            <span className="text-sm font-medium">手動追加</span>
+          </button>
+
+          <button
+            onClick={handleReceiptClick}
+            disabled={isAnalyzing}
+            aria-label={
+              isAnalyzing
+                ? `レシートを読み取り中 (${analyzedCount}/${analyzingCount})`
+                : 'レシート画像を選択'
+            }
+            className={`h-10 px-3 rounded-xl border transition-colors flex items-center gap-2 ${
+              isAnalyzing
+                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600'
+            }`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        </button>
+            {isAnalyzing ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 4h6m-8 4h10m-9 4h8m-8 4h5M5 4h.01M5 8h.01M5 12h.01M5 16h.01M6 20h12a1 1 0 001-1V3a1 1 0 00-1-1H6a1 1 0 00-1 1v16a1 1 0 001 1z"
+                />
+              </svg>
+            )}
+            <span className="text-sm font-medium">
+              {isAnalyzing ? `解析中 ${analyzedCount}/${analyzingCount}` : 'レシート読取'}
+            </span>
+          </button>
+
+          <button
+            onClick={handleCameraClick}
+            disabled={isAnalyzing}
+            aria-label="カメラで撮影"
+            className={`h-10 px-3 rounded-xl border transition-colors flex items-center gap-2 ${
+              isAnalyzing
+                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span className="text-sm font-medium">カメラ撮影</span>
+          </button>
+        </div>
+
+        {analysisFallbackMessage && (
+          <div className="w-72 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 p-3 shadow-md">
+            <p className="text-sm">{analysisFallbackMessage}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={handleOpenManualModal}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                手動入力する
+              </button>
+              <button
+                onClick={() => setAnalysisFallbackMessage(null)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <InventoryManualAddModal
+        isOpen={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        onRegistered={() => onInventoryRegistered?.()}
+      />
+
       <input
         ref={receiptInputRef}
         type="file"
