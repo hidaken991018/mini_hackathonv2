@@ -62,7 +62,41 @@
 - バッチ（自動実行）の実装方針を決める
 
 ## TODO（本番自動化向け）
-- [ ] 期限通知の自動実行を追加する（バッチ/cron）
-- [ ] 対象ユーザーを全体に拡張する（全ユーザー分の実行）
-- [ ] 認証/安全対策を入れる（管理者専用 or シークレット）
+- [x] 期限通知の自動実行を追加する（バッチ/cron）— GitHub Actions cron で毎日 08:00 JST に実行
+- [x] 対象ユーザーを全体に拡張する（全ユーザー分の実行）— Issue #46 で対応済み
+- [x] 認証/安全対策を入れる（管理者専用 or シークレット）— `x-notify-secret` ヘッダーで認証
 - [ ] 失敗時のリトライ/監視を検討する
+
+## 手動テスト手順（curl）
+
+### 前提条件
+- `.env.local` に `NOTIFY_SECRET` が設定されていること
+- 開発サーバーが起動していること（`npm run dev`）
+
+### 全ユーザーバッチモード（userId省略）
+
+```
+curl -sS -X POST http://localhost:3000/api/notifications/expiry -H "Content-Type: application/json" -H "x-notify-secret: <NOTIFY_SECRETの値>"
+```
+
+期待レスポンス:
+```json
+{ "success": true, "data": { "createdCount": 5, "processedUsers": 10 } }
+```
+- `processedUsers` がDBの全ユーザー数と一致すること
+
+### 単一ユーザーモード（後方互換）
+
+```
+curl -sS -X POST http://localhost:3000/api/notifications/expiry -H "Content-Type: application/json" -H "x-notify-secret: <NOTIFY_SECRETの値>" -d "{\"userId\":\"<ユーザーID>\"}"
+```
+
+期待レスポンス:
+```json
+{ "success": true, "data": { "createdCount": 2, "processedUsers": 1 } }
+```
+
+### 確認ポイント
+- 2回連続実行しても `createdCount: 0` になる（重複防止が機能している）
+- 期限の近い在庫がないユーザーは `createdCount` に加算されない
+- `Prisma Studio`（`npm run db:studio`）で `notifications` テーブルに `type: "expiry"` のレコードが複数ユーザー分作成されていること
