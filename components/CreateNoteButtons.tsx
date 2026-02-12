@@ -1,11 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import { ReceiptAnalysisResult, InventoryItem } from '@/types';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
 
 // ローカル在庫型
 type LocalInventory = {
@@ -67,13 +64,7 @@ export default function CreateNoteButtons({
 
         allImageUrls.push(imageUrl);
 
-        const response = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
-        });
-
-        const data = await response.json();
+        const { data } = await axiosInstance.post('/api/analyze-receipt', { imageData: imageUrl });
 
         if (data.success) {
           if (data.data.items) {
@@ -116,8 +107,7 @@ export default function CreateNoteButtons({
     setIsRegistering(true);
 
     try {
-      const response = await axios.post('/api/inventories/bulk', {
-        userId: DEFAULT_USER_ID,
+      const response = await axiosInstance.post('/api/inventories/bulk', {
         items: previewItems,
       });
 

@@ -196,8 +196,7 @@ ${inventoryList}
           {
             success: false,
             error: 'レシピ生成中にエラーが発生しました',
-            details: 'GeminiのJSON解析に失敗しました',
-            rawResponse: retryText.slice(0, 800),
+            ...(process.env.NODE_ENV === 'development' && { details: 'GeminiのJSON解析に失敗しました', rawResponse: retryText.slice(0, 800) }),
           },
           { status: 502 },
         );
@@ -408,7 +407,7 @@ ${inventoryList}
       {
         success: false,
         error: 'レシピ生成中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 },
     );

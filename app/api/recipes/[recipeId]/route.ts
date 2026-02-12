@@ -71,7 +71,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの取得中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -241,7 +241,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの更新中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -298,7 +298,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの削除中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );

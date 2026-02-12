@@ -80,13 +80,7 @@ export default function CreateNoteModal({
 
         allImageUrls.push(imageUrl);
 
-        const response = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
-        });
-
-        const data = await response.json();
+        const { data } = await axiosInstance.post('/api/analyze-receipt', { imageData: imageUrl });
 
         if (data.success) {
           if (data.data.items) {

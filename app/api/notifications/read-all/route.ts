@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest) {
       {
         success: false,
         error: '全件既読処理中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
