@@ -9,7 +9,6 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import InventoryList from '@/components/InventoryList';
 import InventoryEditModal from '@/components/InventoryEditModal';
-import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import { InventoryItemWithId } from '@/types';
 
 export default function InventoryPage() {
@@ -167,7 +166,6 @@ export default function InventoryPage() {
 
       <div className="pb-16" /> {/* BottomNav分のスペース */}
       <BottomNav />
-      <ReceiptUploadPanel onInventoryRegistered={fetchInventories} />
 
       <InventoryEditModal
         item={selectedItem}

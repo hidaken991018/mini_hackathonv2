@@ -35,11 +35,60 @@ describe('ReceiptUploadPanel', () => {
     });
   });
 
-  it('手動追加ボタンを常時表示する', () => {
+  it('初期表示は + ボタンのみを表示する', () => {
     render(<ReceiptUploadPanel />);
     expect(
-      screen.getByRole('button', { name: '在庫を手動で追加' })
+      screen.getByRole('button', { name: '在庫入力メニューを開く' })
     ).toBeInTheDocument();
+    expect(screen.queryByText('カメラで撮影')).not.toBeInTheDocument();
+    expect(screen.queryByText('レシートを読み取る')).not.toBeInTheDocument();
+    expect(screen.queryByText('手入力で追加')).not.toBeInTheDocument();
+  });
+
+  it('+ ボタン押下でアクションシートを開く', () => {
+    render(<ReceiptUploadPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '在庫入力メニューを開く' }));
+
+    expect(screen.getByText('カメラで撮影')).toBeInTheDocument();
+    expect(screen.getByText('レシートを読み取る')).toBeInTheDocument();
+    expect(screen.getByText('手入力で追加')).toBeInTheDocument();
+  });
+
+  it('レシート選択でレシートinputを開く', () => {
+    const { container } = render(<ReceiptUploadPanel />);
+    const receiptInput = container.querySelector(
+      'input[type="file"][multiple]'
+    ) as HTMLInputElement;
+    const receiptClickSpy = jest
+      .spyOn(receiptInput, 'click')
+      .mockImplementation(() => {});
+
+    fireEvent.click(screen.getByRole('button', { name: '在庫入力メニューを開く' }));
+    fireEvent.click(screen.getByRole('button', { name: 'レシートを読み取る' }));
+
+    expect(receiptClickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('カメラ選択でカメラinputを開く', () => {
+    const { container } = render(<ReceiptUploadPanel />);
+    const cameraInput = container.querySelector(
+      'input[type="file"][capture="environment"]'
+    ) as HTMLInputElement;
+    const cameraClickSpy = jest
+      .spyOn(cameraInput, 'click')
+      .mockImplementation(() => {});
+
+    fireEvent.click(screen.getByRole('button', { name: '在庫入力メニューを開く' }));
+    fireEvent.click(screen.getByRole('button', { name: 'カメラで撮影' }));
+
+    expect(cameraClickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('手入力選択で手動追加モーダルを開く', () => {
+    render(<ReceiptUploadPanel />);
+    fireEvent.click(screen.getByRole('button', { name: '在庫入力メニューを開く' }));
+    fireEvent.click(screen.getByRole('button', { name: '手入力で追加' }));
+    expect(screen.getByText('manual-add-modal')).toBeInTheDocument();
   });
 
   it('OCRで食材が抽出できない場合に手動入力フォールバックを表示する', async () => {
