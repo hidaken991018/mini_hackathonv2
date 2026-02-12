@@ -2,6 +2,9 @@
 
 import { InventoryItemWithId } from '@/types';
 import { useState, useEffect } from 'react';
+import UnitSelector from './UnitSelector';
+import ExpiryDateInput from './ExpiryDateInput';
+import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
 
 interface InventoryEditModalProps {
   item: InventoryItemWithId | null;
@@ -24,8 +27,26 @@ export default function InventoryEditModal({
     quantityUnit: '',
     expireDate: '',
     consumeBy: '',
+    purchaseDate: '',
     note: '',
+    isStaple: false,
+    expiryType: 'best_before' as ExpiryType,
   });
+
+  /**
+   * 既存データから適切な期限タイプを推定する
+   * - consumeBy が設定済み → consume_by
+   * - expireDate が設定済み → カテゴリ判定（best_before or freshness）
+   * - どちらもない → カテゴリ自動判定（不明なら best_before）
+   */
+  const detectExpiryType = (itemData: InventoryItemWithId): ExpiryType => {
+    if (itemData.consumeBy) return 'consume_by';
+    if (itemData.expireDate) {
+      const detected = getExpiryType(itemData.name);
+      return detected === 'freshness' ? 'freshness' : 'best_before';
+    }
+    return getExpiryType(itemData.name) ?? 'best_before';
+  };
 
   useEffect(() => {
     if (item) {
@@ -35,7 +56,10 @@ export default function InventoryEditModal({
         quantityUnit: item.quantityUnit || '',
         expireDate: item.expireDate || '',
         consumeBy: item.consumeBy || '',
+        purchaseDate: item.purchaseDate || '',
         note: item.note || '',
+        isStaple: item.isStaple || false,
+        expiryType: detectExpiryType(item),
       });
       document.body.style.overflow = 'hidden';
     } else {
@@ -44,6 +68,7 @@ export default function InventoryEditModal({
     return () => {
       document.body.style.overflow = 'unset';
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item]);
 
   if (!item) return null;
@@ -57,7 +82,9 @@ export default function InventoryEditModal({
       quantityUnit: formData.quantityUnit || undefined,
       expireDate: formData.expireDate || undefined,
       consumeBy: formData.consumeBy || undefined,
+      purchaseDate: formData.purchaseDate || undefined,
       note: formData.note || undefined,
+      isStaple: formData.isStaple,
     });
   };
 
@@ -123,6 +150,7 @@ export default function InventoryEditModal({
               </label>
               <input
                 type="number"
+                min="1"
                 value={formData.quantityValue}
                 onChange={(e) =>
                   setFormData({ ...formData, quantityValue: e.target.value })
@@ -130,50 +158,99 @@ export default function InventoryEditModal({
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
-            <div className="w-24">
+            <div className="w-28">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 単位
               </label>
-              <input
-                type="text"
+              <UnitSelector
                 value={formData.quantityUnit}
-                onChange={(e) =>
-                  setFormData({ ...formData, quantityUnit: e.target.value })
+                onChange={(unit) =>
+                  setFormData({ ...formData, quantityUnit: unit })
                 }
                 placeholder="個"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full"
               />
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                賞味期限
-              </label>
-              <input
-                type="date"
-                value={formData.expireDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, expireDate: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                消費期限
-              </label>
-              <input
-                type="date"
-                value={formData.consumeBy}
-                onChange={(e) =>
-                  setFormData({ ...formData, consumeBy: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              食材タイプ
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setFormData({ ...formData, isStaple: !formData.isStaple })
+              }
+              className={`w-full flex items-center justify-between px-4 py-2 border rounded-lg transition-colors ${
+                formData.isStaple
+                  ? 'bg-amber-50 border-amber-300 text-amber-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-sm">
+                {formData.isStaple ? '常備品' : '使い切り食材'}
+              </span>
+              <span className="text-xs text-gray-400">
+                {formData.isStaple
+                  ? '調理しても在庫を減らさない'
+                  : '調理すると在庫を減らす'}
+              </span>
+            </button>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              購入日
+            </label>
+            <input
+              type="date"
+              value={formData.purchaseDate}
+              onChange={(e) =>
+                setFormData({ ...formData, purchaseDate: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <ExpiryDateInput
+            expiryType={formData.expiryType}
+            date={
+              formData.expiryType === 'consume_by'
+                ? formData.consumeBy
+                : formData.expireDate
+            }
+            onTypeChange={(type) => {
+              // タイプ切り替え時: 現在の日付値をもう片方のフィールドに移動
+              const currentDate =
+                formData.expiryType === 'consume_by'
+                  ? formData.consumeBy
+                  : formData.expireDate;
+              if (type === 'consume_by') {
+                setFormData({
+                  ...formData,
+                  expiryType: type,
+                  consumeBy: currentDate,
+                  expireDate: '',
+                });
+              } else {
+                setFormData({
+                  ...formData,
+                  expiryType: type,
+                  expireDate: currentDate,
+                  consumeBy: '',
+                });
+              }
+            }}
+            onDateChange={(date) => {
+              if (formData.expiryType === 'consume_by') {
+                setFormData({ ...formData, consumeBy: date, expireDate: '' });
+              } else {
+                setFormData({ ...formData, expireDate: date, consumeBy: '' });
+              }
+            }}
+            foodName={formData.name}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

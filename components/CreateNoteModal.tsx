@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import { ReceiptAnalysisResult, InventoryItem } from '@/types';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
+import UnitSelector from './UnitSelector';
+import ExpiryDateInput from './ExpiryDateInput';
+import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
 
 // ローカル在庫型
 type LocalInventory = {
@@ -128,8 +128,7 @@ export default function CreateNoteModal({
     setIsRegistering(true);
 
     try {
-      const response = await axios.post('/api/inventories/bulk', {
-        userId: DEFAULT_USER_ID,
+      const response = await axiosInstance.post('/api/inventories/bulk', {
         items: previewItems,
       });
 
@@ -190,6 +189,52 @@ export default function CreateNoteModal({
   const formatDateForInput = (dateStr?: string) => {
     if (!dateStr) return '';
     return dateStr;
+  };
+
+  /**
+   * アイテムの既存データから期限タイプを推定する
+   */
+  const getItemExpiryType = (item: InventoryItem): ExpiryType => {
+    if (item.consumeBy) return 'consume_by';
+    if (item.expireDate) {
+      const detected = getExpiryType(item.name);
+      return detected === 'freshness' ? 'freshness' : 'best_before';
+    }
+    return getExpiryType(item.name) ?? 'best_before';
+  };
+
+  /**
+   * 期限タイプ切り替え時のハンドラ
+   */
+  const handleExpiryTypeChange = (index: number, item: InventoryItem, newType: ExpiryType) => {
+    const currentDate = item.consumeBy || item.expireDate || '';
+    setPreviewItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== index) return it;
+        if (newType === 'consume_by') {
+          return { ...it, consumeBy: currentDate, expireDate: undefined };
+        } else {
+          return { ...it, expireDate: currentDate, consumeBy: undefined };
+        }
+      })
+    );
+  };
+
+  /**
+   * 期限日付変更時のハンドラ
+   */
+  const handleExpiryDateChange = (index: number, item: InventoryItem, date: string) => {
+    const currentType = getItemExpiryType(item);
+    setPreviewItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== index) return it;
+        if (currentType === 'consume_by') {
+          return { ...it, consumeBy: date || undefined, expireDate: undefined };
+        } else {
+          return { ...it, expireDate: date || undefined, consumeBy: undefined };
+        }
+      })
+    );
   };
 
   if (!isOpen) return null;
@@ -411,53 +456,34 @@ export default function CreateNoteModal({
                             placeholder="数量"
                             className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
-                          <input
-                            type="text"
+                          <UnitSelector
                             value={item.quantityUnit || ''}
-                            onChange={(e) =>
+                            onChange={(unit) =>
                               handleUpdateItem(
                                 index,
                                 'quantityUnit',
-                                e.target.value || undefined
+                                unit || undefined
                               )
                             }
                             placeholder="単位"
-                            className="w-16 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            className="w-20"
                           />
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="flex-1">
-                          <label className="block text-gray-500 mb-1">賞味期限</label>
-                          <input
-                            type="date"
-                            value={formatDateForInput(item.expireDate)}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'expireDate',
-                                e.target.value || undefined
-                              )
-                            }
-                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-gray-500 mb-1">消費期限</label>
-                          <input
-                            type="date"
-                            value={formatDateForInput(item.consumeBy)}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'consumeBy',
-                                e.target.value || undefined
-                              )
-                            }
-                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
+                      <div className="text-xs">
+                        <ExpiryDateInput
+                          expiryType={getItemExpiryType(item)}
+                          date={
+                            getItemExpiryType(item) === 'consume_by'
+                              ? formatDateForInput(item.consumeBy)
+                              : formatDateForInput(item.expireDate)
+                          }
+                          onTypeChange={(type) => handleExpiryTypeChange(index, item, type)}
+                          onDateChange={(date) => handleExpiryDateChange(index, item, date)}
+                          foodName={item.name}
+                          compact
+                        />
                       </div>
                     </div>
                   ))}

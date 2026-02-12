@@ -41,7 +41,9 @@ export type InventoryItem = {
   quantityUnit?: string;
   expireDate?: string;
   consumeBy?: string;
+  purchaseDate?: string;
   note?: string;
+  isStaple?: boolean;
 };
 
 // 在庫アイテムの型（ID付き、API レスポンス用）
@@ -52,8 +54,10 @@ export type InventoryItemWithId = {
   quantityUnit?: string;
   expireDate?: string;
   consumeBy?: string;
+  purchaseDate?: string;
   note?: string;
   imageUrl?: string;
+  isStaple?: boolean;
   createdAt: string;
   updatedAt: string;
 };

@@ -1,21 +1,16 @@
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userIdが必要です' },
-        { status: 400 }
-      );
-    }
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
 
     const inventories = await prisma.inventory.findMany({
-      where: { userId },
+      where: { userId: userId! },
       orderBy: { updatedAt: 'desc' },
     });
 
@@ -26,8 +21,10 @@ export async function GET(request: NextRequest) {
       quantityUnit: inv.quantityUnit,
       expireDate: inv.expireDate?.toISOString().split('T')[0] ?? null,
       consumeBy: inv.consumeBy?.toISOString().split('T')[0] ?? null,
+      purchaseDate: inv.purchaseDate?.toISOString().split('T')[0] ?? null,
       note: inv.note,
       imageUrl: inv.imageUrl,
+      isStaple: inv.isStaple,
       createdAt: inv.createdAt.toISOString(),
       updatedAt: inv.updatedAt.toISOString(),
     }));

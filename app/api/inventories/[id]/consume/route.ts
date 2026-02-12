@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-helpers';
+import { getConsumeInfo } from '@/lib/units';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +11,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { id } = await params;
 
     // 現在の在庫を取得
@@ -21,11 +26,20 @@ export async function PATCH(
       );
     }
 
-    const currentValue = inventory.quantityValue ?? 0;
-    const newValue = Math.max(0, currentValue - 1);
+    // 所有者確認
+    if (inventory.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'この在庫を消費する権限がありません' },
+        { status: 403 }
+      );
+    }
+
+    const currentValue = inventory.quantityValue ?? 1;
+    const { consumeAmount } = getConsumeInfo(inventory.quantityValue, inventory.quantityUnit);
+    const newValue = Math.round(Math.max(0, currentValue - consumeAmount) * 100) / 100;
 
     // 0になった場合は削除、それ以外は更新
-    if (newValue === 0) {
+    if (newValue <= 0) {
       await prisma.inventory.delete({ where: { id } });
       return NextResponse.json({
         success: true,

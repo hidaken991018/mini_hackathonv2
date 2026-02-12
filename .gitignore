@@ -200,3 +200,7 @@ public/images/infographics/
 
 # project plans
 plans/
+
+# temp files
+.tmp_issues.json
+nul

@@ -27,6 +27,7 @@ export {
   INGREDIENT_DENSITIES,
   BASE_UNITS,
   FRACTION_PATTERNS,
+  CONSUME_AMOUNTS,
 } from './constants';
 
 // 正規化関数のエクスポート
@@ -55,4 +56,5 @@ export {
   compareQuantities,
   checkRecipeAvailability,
   calculateRemainingQuantity,
+  getConsumeInfo,
 } from './comparator';
