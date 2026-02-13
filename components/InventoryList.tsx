@@ -39,7 +39,7 @@ export default function InventoryList({
           </div>
           <p className="text-gray-500">在庫がありません</p>
           <p className="text-gray-400 text-sm mt-1">
-            通知画面からレシートを読み取って
+            通知画面の「＋」から
             <br />
             食材を登録してください
           </p>
