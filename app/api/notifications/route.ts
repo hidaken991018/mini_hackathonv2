@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: '通知の取得中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     )

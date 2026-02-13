@@ -10,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error, userId } = await requireAuth(request);
+    if (error) return error;
+
     const { id } = await params;
     const inventory = await prisma.inventory.findUnique({ where: { id } });
 
@@ -17,6 +20,14 @@ export async function GET(
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
         { status: 404 }
+      );
+    }
+
+    // 所有者確認
+    if (inventory.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'この在庫にアクセスする権限がありません' },
+        { status: 403 }
       );
     }
 
@@ -43,7 +54,7 @@ export async function GET(
       {
         success: false,
         error: '在庫の取得中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -124,7 +135,7 @@ export async function PUT(
       {
         success: false,
         error: '在庫の更新中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -168,7 +179,7 @@ export async function DELETE(
       {
         success: false,
         error: '在庫の削除中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );

@@ -185,7 +185,7 @@ export async function POST(
       {
         success: false,
         error: 'レシピ調理処理中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );

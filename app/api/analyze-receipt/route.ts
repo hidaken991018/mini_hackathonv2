@@ -2,6 +2,7 @@ import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDefaultExpiryDates } from '@/lib/expiry-defaults';
 import { isStapleFood } from '@/lib/food-category';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
+    const { error } = await requireAuth(request);
+    if (error) return error;
+
     // リクエストボディから画像データを取得
     const { imageData } = await request.json();
 
@@ -266,7 +270,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'レシートの解析結果をパースできませんでした',
-          rawResponse: text,
+          ...(process.env.NODE_ENV === 'development' && { rawResponse: text }),
         },
         { status: 500 },
       );

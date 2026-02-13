@@ -94,27 +94,20 @@ export default function ReceiptUploadPanel({
 
         allImageUrls.push(imageUrl);
 
-        const response = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
-        });
+        try {
+          const { data } = await axiosInstance.post('/api/analyze-receipt', { imageData: imageUrl });
 
-        if (!response.ok) {
+          if (data.success && Array.isArray(data.data?.items)) {
+            allItems.push(...data.data.items);
+          } else {
+            hadAnalysisFailure = true;
+          }
+        } catch (error) {
+          console.error(`Receipt analysis error for file ${i + 1}:`, error);
           hadAnalysisFailure = true;
+        } finally {
           setAnalyzedCount(i + 1);
-          continue;
         }
-
-        const data = await response.json();
-
-        if (data.success && Array.isArray(data.data?.items)) {
-          allItems.push(...data.data.items);
-        } else {
-          hadAnalysisFailure = true;
-        }
-
-        setAnalyzedCount(i + 1);
       } catch (error) {
         console.error(`Receipt analysis error for file ${i + 1}:`, error);
         hadAnalysisFailure = true;
