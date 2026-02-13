@@ -36,6 +36,7 @@ export async function GET(
       data: {
         id: inventory.id,
         name: inventory.name,
+        category: inventory.category,
         quantityValue: inventory.quantityValue,
         quantityUnit: inventory.quantityUnit,
         expireDate: inventory.expireDate?.toISOString().split('T')[0] ?? null,
@@ -102,6 +103,7 @@ export async function PUT(
       where: { id },
       data: {
         name: body.name,
+        ...(body.category !== undefined && { category: body.category || null }),
         quantityValue: body.quantityValue,
         quantityUnit: body.quantityUnit,
         expireDate: body.expireDate ? new Date(body.expireDate) : null,
@@ -117,6 +119,7 @@ export async function PUT(
       data: {
         id: updatedInventory.id,
         name: updatedInventory.name,
+        category: updatedInventory.category,
         quantityValue: updatedInventory.quantityValue,
         quantityUnit: updatedInventory.quantityUnit,
         expireDate: updatedInventory.expireDate?.toISOString().split('T')[0] ?? null,

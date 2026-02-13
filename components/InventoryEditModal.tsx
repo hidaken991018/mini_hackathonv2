@@ -4,7 +4,7 @@ import { InventoryItemWithId } from '@/types';
 import { useState, useEffect } from 'react';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
-import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import { ExpiryType, getExpiryType, FOOD_CATEGORY_NAMES, getFoodCategoryName } from '@/lib/expiry-defaults';
 import Portal from './Portal';
 
 interface InventoryEditModalProps {
@@ -32,6 +32,7 @@ export default function InventoryEditModal({
     note: '',
     isStaple: false,
     expiryType: 'best_before' as ExpiryType,
+    category: 'その他',
   });
 
   /**
@@ -61,6 +62,7 @@ export default function InventoryEditModal({
         note: item.note || '',
         isStaple: item.isStaple || false,
         expiryType: detectExpiryType(item),
+        category: item.category || getFoodCategoryName(item.name),
       });
       document.body.style.overflow = 'hidden';
     } else {
@@ -86,6 +88,7 @@ export default function InventoryEditModal({
       purchaseDate: formData.purchaseDate || undefined,
       note: formData.note || undefined,
       isStaple: formData.isStaple,
+      category: formData.category,
     });
   };
 
@@ -253,6 +256,28 @@ export default function InventoryEditModal({
             }}
             foodName={formData.name}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              カテゴリー
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+            >
+              {FOOD_CATEGORY_NAMES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] text-gray-400">
+              ※食材名から自動推定されていますが、変更可能です。
+            </p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
