@@ -14,16 +14,22 @@ const matchBadgeConfig: Record<RecipeMatchLabel, { label: string; className: str
 };
 
 export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
-  const formatDate = (dateString: string) => {
+  const formatUpdatedDate = (dateString: string) => {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '更新: -';
+
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diff = startOfToday.getTime() - startOfDate.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) return '今日';
-    if (days === 1) return '昨日';
-    if (days < 7) return `${days}日前`;
-    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+    const relative = days <= 0 ? '今日' : days === 1 ? '昨日' : `${days}日前`;
+    const absolute = date.toLocaleDateString('ja-JP', now.getFullYear() === date.getFullYear()
+      ? { month: 'numeric', day: 'numeric' }
+      : { year: 'numeric', month: 'numeric', day: 'numeric' });
+
+    return `更新: ${relative}（${absolute}）`;
   };
 
   return (
@@ -68,7 +74,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           </svg>
           {recipe.ingredientCount}材料
         </span>
-        <span className="ml-auto">{formatDate(recipe.createdAt)}</span>
+        <span className="ml-auto">{formatUpdatedDate(recipe.updatedAt)}</span>
       </div>
 
       {/* 説明文 */}

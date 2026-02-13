@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
         ingredientCount: recipe._count.ingredients,
         stepCount: recipe._count.steps,
         createdAt: recipe.createdAt.toISOString(),
+        updatedAt: recipe.updatedAt.toISOString(),
         matchScore,
         matchLabel,
       };

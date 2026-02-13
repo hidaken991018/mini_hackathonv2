@@ -120,6 +120,7 @@ export type RecipeListItem = {
   ingredientCount: number;
   stepCount: number;
   createdAt: string;
+  updatedAt: string;
   matchScore?: number;
   matchLabel?: RecipeMatchLabel;
 };

@@ -171,6 +171,7 @@ export default function RecipesPage() {
       ingredientCount: recipe.ingredients.length,
       stepCount: recipe.steps.length,
       createdAt: recipe.createdAt,
+      updatedAt: recipe.updatedAt,
     };
     setRecipes((prev) => [listItem, ...prev]);
     setIsCreateModalOpen(false);
@@ -188,6 +189,7 @@ export default function RecipesPage() {
       ingredientCount: recipe.ingredients.length,
       stepCount: recipe.steps.length,
       createdAt: recipe.createdAt,
+      updatedAt: recipe.updatedAt,
     };
     setRecipes((prev) => prev.map((r) => (r.id === recipe.id ? listItem : r)));
     setSelectedRecipe(recipe);
@@ -289,35 +291,37 @@ export default function RecipesPage() {
           </svg>
         </div>
 
-        {/* フィルター・ソート */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {(['all', 'user_created', 'ai_generated'] as FilterType[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                filter === f
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+        {/* フィルター・並び替え */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(['all', 'user_created', 'ai_generated'] as FilterType[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  filter === f
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {f === 'all' ? 'すべて' : f === 'user_created' ? '手入力' : 'AI生成'}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <label htmlFor="recipe-sort" className="text-xs font-medium text-gray-500">
+              並び替え
+            </label>
+            <select
+              id="recipe-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortType)}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900"
             >
-              {f === 'all' ? 'すべて' : f === 'user_created' ? '手入力' : 'AI生成'}
-            </button>
-          ))}
-          <span className="mx-1 text-gray-300">|</span>
-          {(['date', 'match'] as SortType[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSortBy(s)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                sortBy === s
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {s === 'date' ? '日付順' : 'マッチ度順'}
-            </button>
-          ))}
+              <option value="date">更新日順</option>
+              <option value="match">マッチ度順</option>
+            </select>
+          </div>
         </div>
         {(generateError || generateSuccess) && (
           <div className="mt-3 text-sm">
