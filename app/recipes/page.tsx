@@ -504,23 +504,21 @@ export default function RecipesPage() {
               </div>
             </div>
 
-            {/* フッター（手入力レシピのみ編集・削除可能） */}
-            {selectedRecipe.sourceType === 'user_created' && (
-              <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex gap-3">
-                <button
-                  onClick={handleDeleteRecipe}
-                  className="flex-1 py-3 border border-red-200 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors"
-                >
-                  削除
-                </button>
-                <button
-                  onClick={() => setIsEditMode(true)}
-                  className="flex-1 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
-                >
-                  編集
-                </button>
-              </div>
-            )}
+            {/* フッター（全レシピで編集・削除可能） */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex gap-3">
+              <button
+                onClick={handleDeleteRecipe}
+                className="flex-1 py-3 border border-red-200 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors"
+              >
+                削除
+              </button>
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="flex-1 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
+              >
+                編集
+              </button>
+            </div>
           </div>
         </div>
       )}

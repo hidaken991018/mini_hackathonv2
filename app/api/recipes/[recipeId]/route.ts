@@ -105,14 +105,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // AI生成レシピは編集不可
-    if (existingRecipe.sourceType === 'ai_generated') {
-      return NextResponse.json(
-        { success: false, error: 'AI生成レシピは編集できません' },
-        { status: 400 }
-      );
-    }
-
     const body = await request.json();
     const { title, description, cookingTime, servings, ingredients, steps } = body;
 
@@ -272,14 +264,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { success: false, error: 'アクセス権限がありません' },
         { status: 403 }
-      );
-    }
-
-    // AI生成レシピは削除不可
-    if (existingRecipe.sourceType === 'ai_generated') {
-      return NextResponse.json(
-        { success: false, error: 'AI生成レシピは削除できません' },
-        { status: 400 }
       );
     }
 

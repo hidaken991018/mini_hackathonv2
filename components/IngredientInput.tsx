@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import UnitSelector from './UnitSelector';
 
 export type IngredientFormItem = {
   name: string;
@@ -12,6 +12,29 @@ type IngredientInputProps = {
   ingredients: IngredientFormItem[];
   onChange: (ingredients: IngredientFormItem[]) => void;
 };
+
+const RECIPE_UNIT_GROUPS = [
+  {
+    label: '個数',
+    units: ['個', '本', '枚', 'パック', '袋', '房', '束', '玉', '株', '切れ', '片', '缶'],
+  },
+  {
+    label: '重量',
+    units: ['g', 'kg', 'mg'],
+  },
+  {
+    label: '容量',
+    units: ['ml', 'L', 'cc'],
+  },
+  {
+    label: '計量',
+    units: ['大さじ', '小さじ', 'カップ'],
+  },
+  {
+    label: '目安',
+    units: ['少々', 'ひとつまみ', '適量', 'お好みで'],
+  },
+];
 
 export default function IngredientInput({ ingredients, onChange }: IngredientInputProps) {
   const handleChange = (index: number, field: keyof IngredientFormItem, value: string) => {
@@ -52,13 +75,12 @@ export default function IngredientInput({ ingredients, onChange }: IngredientInp
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
             />
           </div>
-          <div className="w-16">
-            <input
-              type="text"
+          <div className="w-24">
+            <UnitSelector
               value={ingredient.quantityUnit}
-              onChange={(e) => handleChange(index, 'quantityUnit', e.target.value)}
-              placeholder="単位"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              onChange={(value) => handleChange(index, 'quantityUnit', value)}
+              unitGroups={RECIPE_UNIT_GROUPS}
+              className="w-full"
             />
           </div>
           <button
