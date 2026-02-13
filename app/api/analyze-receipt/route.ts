@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDefaultExpiryDates } from '@/lib/expiry-defaults';
 import { isStapleFood } from '@/lib/food-category';
 import { requireAuth } from '@/lib/auth-helpers';
+import { createValidationErrorResponse } from '@/lib/validation/error-response';
+import { analyzeReceiptRequestSchema } from '@/lib/validation/schemas';
 
 export const dynamic = 'force-dynamic'
 
@@ -14,15 +16,17 @@ export async function POST(request: NextRequest) {
     const { error } = await requireAuth(request);
     if (error) return error;
 
-    // リクエストボディから画像データを取得
-    const { imageData } = await request.json();
-
-    if (!imageData) {
-      return NextResponse.json(
-        { error: '画像データが必要です' },
-        { status: 400 },
+    // リクエストボディから画像データを取得（形式・サイズを検証）
+    const body = await request.json();
+    const validation = analyzeReceiptRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return createValidationErrorResponse(
+        validation.error,
+        'リクエストボディの検証に失敗しました',
       );
     }
+
+    const { imageData } = validation.data;
 
     // APIキーの確認
     if (!process.env.GEMINI_API_KEY) {

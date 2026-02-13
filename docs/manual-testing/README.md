@@ -9,6 +9,7 @@ docs/manual-testing/
 ├── README.md           # このファイル（ガイド）
 ├── TEMPLATE.md         # テスト手順書テンプレート
 ├── core-features.md    # コア機能の常設テスト手順
+├── security-test.md # Security修正（#54/#35/#36）手順書
 └── <機能名>.md         # 個別機能のテスト手順（verify-allスキルが自動生成）
 ```
 
@@ -37,3 +38,4 @@ docs/manual-testing/
 | AIチャット | [core-features.md#AIチャット](core-features.md#aiチャット) | 中 |
 | 通知 | [core-features.md#通知](core-features.md#通知) | 中 |
 | 認証 | [core-features.md#認証](core-features.md#認証) | 高 |
+| Security修正 #54/#35/#36 | [security-test.md](security-test.md) | 高 |

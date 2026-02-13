@@ -1,19 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
+import { createValidationErrorResponse } from '@/lib/validation/error-response';
+import { inventoryBulkRequestSchema } from '@/lib/validation/schemas';
 
 export const dynamic = 'force-dynamic'
-
-type InventoryItemInput = {
-  name: string;
-  quantityValue?: number;
-  quantityUnit?: string;
-  expireDate?: string;
-  consumeBy?: string;
-  purchaseDate?: string;
-  note?: string;
-  isStaple?: boolean;
-};
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,16 +13,15 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     const body = await request.json();
-    const { items } = body as {
-      items: InventoryItemInput[];
-    };
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: '登録する在庫アイテムが必要です' },
-        { status: 400 }
+    const validation = inventoryBulkRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return createValidationErrorResponse(
+        validation.error,
+        'リクエストボディの検証に失敗しました',
       );
     }
+
+    const { items } = validation.data;
 
     // SQLiteはcreateManyに対応していないため、$transactionでバルクインサート
     const createdInventories = await prisma.$transaction(
@@ -41,11 +31,11 @@ export async function POST(request: NextRequest) {
             userId,
             name: item.name,
             quantityValue: item.quantityValue,
-            quantityUnit: item.quantityUnit,
+            quantityUnit: item.quantityUnit ?? null,
             expireDate: item.expireDate ? new Date(item.expireDate) : null,
             consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
             purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : null,
-            note: item.note,
+            note: item.note ?? null,
             isStaple: item.isStaple ?? false,
           },
         })

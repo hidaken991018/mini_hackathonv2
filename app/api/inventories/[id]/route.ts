@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createValidationErrorResponse } from '@/lib/validation/error-response';
+import { inventoryUpdateRequestSchema } from '@/lib/validation/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +73,16 @@ export async function PUT(
     if (error) return error;
 
     const { id } = await params;
-    const body = await request.json();
+    const requestBody = await request.json();
+    const validation = inventoryUpdateRequestSchema.safeParse(requestBody);
+    if (!validation.success) {
+      return createValidationErrorResponse(
+        validation.error,
+        'リクエストボディの検証に失敗しました',
+      );
+    }
+
+    const body = validation.data;
 
     // 在庫の存在確認
     const existing = await prisma.inventory.findUnique({ where: { id } });
@@ -90,26 +101,26 @@ export async function PUT(
       );
     }
 
-    // 数量バリデーション: 1未満の値を拒否
-    if (body.quantityValue !== undefined && body.quantityValue < 1) {
-      return NextResponse.json(
-        { success: false, error: '数量は1以上で入力してください' },
-        { status: 400 }
-      );
-    }
+    const updateData = {
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.quantityValue !== undefined && { quantityValue: body.quantityValue }),
+      ...(body.quantityUnit !== undefined && { quantityUnit: body.quantityUnit }),
+      ...(body.expireDate !== undefined && {
+        expireDate: body.expireDate ? new Date(body.expireDate) : null,
+      }),
+      ...(body.consumeBy !== undefined && {
+        consumeBy: body.consumeBy ? new Date(body.consumeBy) : null,
+      }),
+      ...(body.purchaseDate !== undefined && {
+        purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
+      }),
+      ...(body.note !== undefined && { note: body.note }),
+      ...(body.isStaple !== undefined && { isStaple: body.isStaple }),
+    };
 
     const updatedInventory = await prisma.inventory.update({
       where: { id },
-      data: {
-        name: body.name,
-        quantityValue: body.quantityValue,
-        quantityUnit: body.quantityUnit,
-        expireDate: body.expireDate ? new Date(body.expireDate) : null,
-        consumeBy: body.consumeBy ? new Date(body.consumeBy) : null,
-        purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
-        note: body.note,
-        ...(body.isStaple !== undefined && { isStaple: body.isStaple }),
-      },
+      data: updateData,
     });
 
     return NextResponse.json({
