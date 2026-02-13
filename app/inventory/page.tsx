@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,21 @@ export default function InventoryPage() {
   const [consumingId, setConsumingId] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
+  const fetchInventories = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const res = await axiosInstance.get('/api/inventories');
+      if (res.data.success) {
+        setInventories(res.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch inventories:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   // 未認証時はサインインページへリダイレクト
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,21 +46,8 @@ export default function InventoryPage() {
 
   // 在庫一覧を取得
   useEffect(() => {
-    if (!user) return;
-    const fetchInventories = async () => {
-      try {
-        const res = await axiosInstance.get('/api/inventories');
-        if (res.data.success) {
-          setInventories(res.data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch inventories:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchInventories();
-  }, [user]);
+  }, [fetchInventories]);
 
   // 消費処理（楽観的更新）
   const handleConsume = async (id: string) => {
