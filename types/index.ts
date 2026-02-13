@@ -106,6 +106,9 @@ export type RecipeInput = {
   steps: RecipeStep[];
 };
 
+// レシピ在庫マッチ度ラベル
+export type RecipeMatchLabel = 'perfect' | 'partial' | 'low';
+
 // レシピ一覧アイテム（軽量版）
 export type RecipeListItem = {
   id: string;
@@ -117,4 +120,6 @@ export type RecipeListItem = {
   ingredientCount: number;
   stepCount: number;
   createdAt: string;
+  matchScore?: number;
+  matchLabel?: RecipeMatchLabel;
 };

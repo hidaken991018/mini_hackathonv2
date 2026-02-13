@@ -7,7 +7,10 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeCard from '@/components/RecipeCard';
 import RecipeCreateModal from '@/components/RecipeCreateModal';
+import AIRecipeGenerateModal from '@/components/AIRecipeGenerateModal';
 import { Recipe, RecipeListItem, RecipeSourceType } from '@/types';
+
+type SortType = 'date' | 'match';
 
 type FilterType = 'all' | RecipeSourceType;
 
@@ -26,6 +29,8 @@ export default function RecipesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortType>('date');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,6 +53,9 @@ export default function RecipesPage() {
       if (searchQuery) {
         params.set('query', searchQuery);
       }
+      if (sortBy !== 'date') {
+        params.set('sort', sortBy);
+      }
 
       const response = await fetch(`/api/recipes?${params.toString()}`, {
         headers: {
@@ -69,13 +77,15 @@ export default function RecipesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, filter, searchQuery]);
+  }, [user, filter, searchQuery, sortBy]);
 
   useEffect(() => {
     fetchRecipes();
   }, [fetchRecipes]);
 
-  const handleGenerateAIRecipe = useCallback(async () => {
+  const handleGenerateAIRecipe = useCallback(async (
+    params: { servings: number; excludeIngredients: string[] }
+  ) => {
     if (!user || isGenerating) return;
 
     setGenerateError(null);
@@ -90,7 +100,10 @@ export default function RecipesPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          servings: params.servings,
+          excludeIngredients: params.excludeIngredients,
+        }),
       });
 
       const result = await response.json();
@@ -101,6 +114,7 @@ export default function RecipesPage() {
       }
 
       setGenerateSuccess('AIレシピを生成しました');
+      setIsGenerateModalOpen(false);
 
       const nextFilter = filter === 'user_created' ? 'ai_generated' : filter;
       const nextSearchQuery = searchQuery ? '' : searchQuery;
@@ -220,7 +234,7 @@ export default function RecipesPage() {
         title="レシピ"
         rightAction={
           <button
-            onClick={handleGenerateAIRecipe}
+            onClick={() => setIsGenerateModalOpen(true)}
             disabled={isGenerating}
             aria-busy={isGenerating}
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -275,8 +289,8 @@ export default function RecipesPage() {
           </svg>
         </div>
 
-        {/* フィルター */}
-        <div className="flex gap-2">
+        {/* フィルター・ソート */}
+        <div className="flex items-center gap-2 flex-wrap">
           {(['all', 'user_created', 'ai_generated'] as FilterType[]).map((f) => (
             <button
               key={f}
@@ -288,6 +302,20 @@ export default function RecipesPage() {
               }`}
             >
               {f === 'all' ? 'すべて' : f === 'user_created' ? '手入力' : 'AI生成'}
+            </button>
+          ))}
+          <span className="mx-1 text-gray-300">|</span>
+          {(['date', 'match'] as SortType[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSortBy(s)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                sortBy === s
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {s === 'date' ? '日付順' : 'マッチ度順'}
             </button>
           ))}
         </div>
@@ -492,6 +520,14 @@ export default function RecipesPage() {
           </div>
         </div>
       )}
+
+      {/* AI生成設定モーダル */}
+      <AIRecipeGenerateModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        onGenerate={handleGenerateAIRecipe}
+        isGenerating={isGenerating}
+      />
 
       <BottomNav />
     </main>
