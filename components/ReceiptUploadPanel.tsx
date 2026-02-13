@@ -7,6 +7,8 @@ import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
 import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
 import InventoryManualAddModal from './InventoryManualAddModal';
+import Portal from './Portal';
+import Image from 'next/image';
 
 type ReceiptUploadPanelProps = {
   launcherPositionClassName?: string;
@@ -14,7 +16,7 @@ type ReceiptUploadPanelProps = {
 };
 
 export default function ReceiptUploadPanel({
-  launcherPositionClassName = 'bottom-20 right-4',
+  launcherPositionClassName = 'bottom-32 right-4',
   onInventoryRegistered,
 }: ReceiptUploadPanelProps) {
   const receiptInputRef = useRef<HTMLInputElement>(null);
@@ -291,97 +293,99 @@ export default function ReceiptUploadPanel({
       </div>
 
       {showActionSheet && (
-        <div
-          className="fixed inset-0 z-40 flex items-end"
-          onClick={handleCloseActionSheet}
-        >
-          <div className="absolute inset-0 bg-black/40" />
+        <Portal>
           <div
-            className="relative w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-2xl border-t border-gray-100 p-4 pb-6 space-y-2"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-end"
+            onClick={handleCloseActionSheet}
           >
-            <button
-              onClick={handleSelectCameraOption}
-              disabled={isAnalyzing}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+            <div className="absolute inset-0 bg-black/40" />
+            <div
+              className="relative w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-2xl border-t border-gray-100 p-4 pb-6 space-y-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <button
+                onClick={handleSelectCameraOption}
+                disabled={isAnalyzing}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className="text-sm font-medium">カメラで撮影</span>
-            </button>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="text-sm font-medium">カメラで撮影</span>
+              </button>
 
-            <button
-              onClick={handleSelectReceiptOption}
-              disabled={isAnalyzing}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <button
+                onClick={handleSelectReceiptOption}
+                disabled={isAnalyzing}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 3h10a2 2 0 012 2v14l-2-1.5L15 19l-2-1.5L11 19l-2-1.5L7 19V5a2 2 0 012-2z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 8h6M10 11h6M10 14h4"
-                />
-              </svg>
-              <span className="text-sm font-medium">レシートを読み取る</span>
-            </button>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 3h10a2 2 0 012 2v14l-2-1.5L15 19l-2-1.5L11 19l-2-1.5L7 19V5a2 2 0 012-2z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 8h6M10 11h6M10 14h4"
+                  />
+                </svg>
+                <span className="text-sm font-medium">レシートを読み取る</span>
+              </button>
 
-            <button
-              onClick={handleSelectManualOption}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 flex items-center gap-3"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <button
+                onClick={handleSelectManualOption}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 flex items-center gap-3"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              <span className="text-sm font-medium">手入力で追加</span>
-            </button>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span className="text-sm font-medium">手入力で追加</span>
+              </button>
 
-            <button
-              onClick={handleCloseActionSheet}
-              className="w-full px-4 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-medium mt-2"
-            >
-              キャンセル
-            </button>
+              <button
+                onClick={handleCloseActionSheet}
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-medium mt-2"
+              >
+                キャンセル
+              </button>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       <InventoryManualAddModal
@@ -408,226 +412,231 @@ export default function ReceiptUploadPanel({
       />
 
       {showPreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={handleClosePreview}
-        >
-          <div className="bg-black/50 absolute inset-0" />
+        <Portal>
           <div
-            className="relative bg-white rounded-2xl max-w-lg w-[95%] max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            onClick={handleClosePreview}
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-lg font-semibold text-gray-900">在庫に登録</h3>
-              <button
-                onClick={handleClosePreview}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
-                aria-label="閉じる"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div className="bg-black/50 absolute inset-0" />
+            <div
+              className="relative bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                <h3 className="text-lg font-semibold text-gray-900">在庫に登録</h3>
+                <button
+                  onClick={handleClosePreview}
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  aria-label="閉じる"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {previewImageUrls.length > 0 && (
-              <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
-                <div
-                  className={`grid gap-2 ${
-                    previewImageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                  }`}
-                >
-                  {previewImageUrls.map((url, index) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt={`レシート ${index + 1}`}
-                      className="w-full max-h-32 object-contain rounded-lg"
+                  <svg
+                    className="w-5 h-5 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                  ))}
-                </div>
+                  </svg>
+                </button>
               </div>
-            )}
 
-            <div className="px-4 py-4 flex-1 min-h-0 overflow-y-auto">
-              {previewItems.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-4">
-                  食材が読み取れませんでした
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {previewItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 rounded-xl border border-gray-100"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) =>
-                            handleUpdateItem(index, 'name', e.target.value)
-                          }
-                          placeholder="食材名"
-                          className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                        <button
-                          onClick={() => handleDeleteItem(index)}
-                          className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                          aria-label="削除"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex-1 flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={item.quantityValue || ''}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'quantityValue',
-                                e.target.value ? Number(e.target.value) : undefined
-                              )
-                            }
-                            placeholder="数量"
-                            className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                          <UnitSelector
-                            value={item.quantityUnit || ''}
-                            onChange={(unit) =>
-                              handleUpdateItem(
-                                index,
-                                'quantityUnit',
-                                unit || undefined
-                              )
-                            }
-                            placeholder="単位"
-                            className="w-20"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleUpdateItem(index, 'isStaple', !item.isStaple)
-                          }
-                          className={`flex-shrink-0 px-2 py-1.5 text-xs rounded-lg border transition-colors ${
-                            item.isStaple
-                              ? 'bg-amber-50 border-amber-300 text-amber-700'
-                              : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
-                          }`}
-                          title={item.isStaple ? '常備品（調理で減らない）' : '使い切り（調理で減る）'}
-                        >
-                          {item.isStaple ? '常備品' : '使い切り'}
-                        </button>
-                      </div>
-
-                      <div className="text-xs">
-                        <ExpiryDateInput
-                          expiryType={getItemExpiryType(item)}
-                          date={
-                            getItemExpiryType(item) === 'consume_by'
-                              ? formatDateForInput(item.consumeBy)
-                              : formatDateForInput(item.expireDate)
-                          }
-                          onTypeChange={(type) => handleExpiryTypeChange(index, item, type)}
-                          onDateChange={(date) => handleExpiryDateChange(index, item, date)}
-                          foodName={item.name}
-                          compact
+              {previewImageUrls.length > 0 && (
+                <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                  <div
+                    className={`grid gap-2 ${
+                      previewImageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                    }`}
+                  >
+                    {previewImageUrls.map((url, index) => (
+                      <div key={index} className="relative w-full h-32">
+                        <Image
+                          src={url}
+                          alt={`レシート ${index + 1}`}
+                          fill
+                          className="object-contain rounded-lg"
+                          unoptimized
                         />
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <button
-                onClick={handleAddItem}
-                className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium hover:border-emerald-400 hover:text-emerald-600 transition-colors flex items-center justify-center gap-1"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                食材を追加
-              </button>
-            </div>
-
-            <div className="px-4 py-3 border-t border-gray-100 flex gap-3 flex-shrink-0">
-              <button
-                onClick={handleClosePreview}
-                className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleRegisterInventory}
-                disabled={
-                  previewItems.length === 0 ||
-                  previewItems.some((item) => !item.name.trim()) ||
-                  isRegistering
-                }
-                className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                {isRegistering ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    登録中...
-                  </span>
+              <div className="px-4 py-4 flex-1 min-h-0 overflow-y-auto">
+                {previewItems.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    食材が読み取れませんでした
+                  </p>
                 ) : (
-                  `在庫に登録 (${previewItems.length}件)`
+                  <div className="space-y-4">
+                    {previewItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-gray-50 rounded-xl border border-gray-100"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) =>
+                              handleUpdateItem(index, 'name', e.target.value)
+                            }
+                            placeholder="食材名"
+                            className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => handleDeleteItem(index)}
+                            className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            aria-label="削除"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex-1 flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={item.quantityValue || ''}
+                              onChange={(e) =>
+                                handleUpdateItem(
+                                  index,
+                                  'quantityValue',
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                              placeholder="数量"
+                              className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            />
+                            <UnitSelector
+                              value={item.quantityUnit || ''}
+                              onChange={(unit) =>
+                                handleUpdateItem(
+                                  index,
+                                  'quantityUnit',
+                                  unit || undefined
+                                )
+                              }
+                              placeholder="単位"
+                              className="w-20"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateItem(index, 'isStaple', !item.isStaple)
+                            }
+                            className={`flex-shrink-0 px-2 py-1.5 text-xs rounded-lg border transition-colors ${
+                              item.isStaple
+                                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                            }`}
+                            title={item.isStaple ? '常備品（調理で減らない）' : '使い切り（調理で減る）'}
+                          >
+                            {item.isStaple ? '常備品' : '使い切り'}
+                          </button>
+                        </div>
+
+                        <div className="text-xs">
+                          <ExpiryDateInput
+                            expiryType={getItemExpiryType(item)}
+                            date={
+                              getItemExpiryType(item) === 'consume_by'
+                                ? formatDateForInput(item.consumeBy)
+                                : formatDateForInput(item.expireDate)
+                            }
+                            onTypeChange={(type) => handleExpiryTypeChange(index, item, type)}
+                            onDateChange={(date) => handleExpiryDateChange(index, item, date)}
+                            foodName={item.name}
+                            compact
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </button>
+
+                <button
+                  onClick={handleAddItem}
+                  className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium hover:border-emerald-400 hover:text-emerald-600 transition-colors flex items-center justify-center gap-1"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  食材を追加
+                </button>
+              </div>
+
+              <div className="px-4 py-3 border-t border-gray-100 flex gap-3 flex-shrink-0">
+                <button
+                  onClick={handleClosePreview}
+                  className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleRegisterInventory}
+                  disabled={
+                    previewItems.length === 0 ||
+                    previewItems.some((item) => !item.name.trim()) ||
+                    isRegistering
+                  }
+                  className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isRegistering ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      登録中...
+                    </span>
+                  ) : (
+                    `在庫に登録 (${previewItems.length}件)`
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </>
   );

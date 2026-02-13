@@ -7,6 +7,8 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeCard from '@/components/RecipeCard';
 import RecipeCreateModal from '@/components/RecipeCreateModal';
+import RecipeSlideModal from '@/components/RecipeSlideModal';
+import MainLayout from '@/components/MainLayout';
 import { Recipe, RecipeListItem, RecipeSourceType } from '@/types';
 
 type FilterType = 'all' | RecipeSourceType;
@@ -215,7 +217,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
+    <MainLayout>
       <ScreenHeader
         title="レシピ"
         rightAction={
@@ -322,7 +324,7 @@ export default function RecipesPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {recipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
@@ -337,7 +339,7 @@ export default function RecipesPage() {
       {/* FABボタン */}
       <button
         onClick={() => setIsCreateModalOpen(true)}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition-colors z-20"
+        className="absolute bottom-32 md:bottom-8 right-6 w-14 h-14 bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-rose-600 transition-colors z-20"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -363,137 +365,17 @@ export default function RecipesPage() {
         />
       )}
 
-      {/* レシピ詳細モーダル */}
-      {selectedRecipe && isDetailModalOpen && !isEditMode && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => {
-              setIsDetailModalOpen(false);
-              setSelectedRecipe(null);
-            }}
-          />
-          <div className="relative w-full max-h-[90vh] bg-white rounded-t-3xl animate-slide-up overflow-hidden">
-            {/* ヘッダー */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold line-clamp-1">{selectedRecipe.title}</h2>
-              <button
-                onClick={() => {
-                  setIsDetailModalOpen(false);
-                  setSelectedRecipe(null);
-                }}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      {/* レシピ詳細モーダル (統一コンポーネント) */}
+      <RecipeSlideModal
+        recipe={selectedRecipe}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedRecipe(null);
+        }}
+        onEdit={() => setIsEditMode(true)}
+        onDelete={handleDeleteRecipe}
+      />
 
-            {/* コンテンツ */}
-            <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-6 py-4 space-y-6">
-              {/* 画像 */}
-              {selectedRecipe.imageUrl && (
-                <div className="rounded-2xl overflow-hidden">
-                  <img
-                    src={selectedRecipe.imageUrl}
-                    alt={selectedRecipe.title}
-                    className="w-full"
-                  />
-                </div>
-              )}
-
-              {/* メタ情報 */}
-              <div className="flex gap-4 text-sm text-gray-500">
-                {selectedRecipe.cookingTime && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {selectedRecipe.cookingTime}
-                  </span>
-                )}
-                {selectedRecipe.servings && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {selectedRecipe.servings}
-                  </span>
-                )}
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs ${
-                    selectedRecipe.sourceType === 'ai_generated'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-green-100 text-green-700'
-                  }`}
-                >
-                  {selectedRecipe.sourceType === 'ai_generated' ? 'AI生成' : '手入力'}
-                </span>
-              </div>
-
-              {/* 説明 */}
-              {selectedRecipe.description && (
-                <p className="text-gray-600">{selectedRecipe.description}</p>
-              )}
-
-              {/* 材料 */}
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-3">材料</h3>
-                <ul className="space-y-2">
-                  {selectedRecipe.ingredients.map((ing, index) => (
-                    <li key={index} className="flex items-center gap-2 text-gray-700">
-                      <span className="w-2 h-2 bg-gray-300 rounded-full" />
-                      <span>{ing.name}</span>
-                      {(ing.quantityValue || ing.quantityUnit) && (
-                        <span className="text-gray-400">
-                          {ing.quantityValue}
-                          {ing.quantityUnit}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* 作り方 */}
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-3">作り方</h3>
-                <ol className="space-y-4">
-                  {selectedRecipe.steps.map((step, index) => (
-                    <li key={index} className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <p className="text-gray-700 pt-0.5">{step.instruction}</p>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-
-            {/* フッター（手入力レシピのみ編集・削除可能） */}
-            {selectedRecipe.sourceType === 'user_created' && (
-              <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex gap-3">
-                <button
-                  onClick={handleDeleteRecipe}
-                  className="flex-1 py-3 border border-red-200 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors"
-                >
-                  削除
-                </button>
-                <button
-                  onClick={() => setIsEditMode(true)}
-                  className="flex-1 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
-                >
-                  編集
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <BottomNav />
-    </main>
+    </MainLayout>
   );
 }

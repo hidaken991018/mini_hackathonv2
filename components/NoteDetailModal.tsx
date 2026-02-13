@@ -2,6 +2,7 @@
 
 import { Note } from '@/types';
 import { useEffect } from 'react';
+import Image from 'next/image';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -89,16 +90,18 @@ export default function NoteDetailModal({
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {note.images.map((imageUrl, index) => (
-                  <div
-                    key={index}
-                    className="aspect-video rounded-xl overflow-hidden bg-gray-100 shadow-sm"
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={`ノート画像 ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                    <div
+                      key={index}
+                      className="aspect-video rounded-xl overflow-hidden bg-gray-100 shadow-sm relative"
+                    >
+                      <Image
+                        src={imageUrl}
+                        alt={`ノート画像 ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                 ))}
               </div>
             </div>

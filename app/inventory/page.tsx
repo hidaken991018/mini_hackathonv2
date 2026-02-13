@@ -9,6 +9,7 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import InventoryList from '@/components/InventoryList';
 import InventoryEditModal from '@/components/InventoryEditModal';
+import MainLayout from '@/components/MainLayout';
 import { InventoryItemWithId } from '@/types';
 
 export default function InventoryPage() {
@@ -124,7 +125,7 @@ export default function InventoryPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <MainLayout>
       <ScreenHeader
         title="在庫"
         rightAction={
@@ -164,8 +165,6 @@ export default function InventoryPage() {
         />
       )}
 
-      <div className="pb-16" /> {/* BottomNav分のスペース */}
-      <BottomNav />
 
       <InventoryEditModal
         item={selectedItem}
@@ -174,6 +173,6 @@ export default function InventoryPage() {
         onDelete={handleDelete}
         isSaving={isSaving}
       />
-    </div>
+    </MainLayout>
   );
 }

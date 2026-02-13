@@ -1,6 +1,7 @@
 'use client';
 
 import { Notification } from '@/types';
+import Image from 'next/image';
 
 interface NotificationCardProps {
   notification: Notification;
@@ -36,21 +37,25 @@ export default function NotificationCard({
         onClick();
         onMarkAsRead();
       }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all duration-200 group"
+      className="bg-white/80 backdrop-blur-sm rounded-[2rem] overflow-hidden pop-shadow border border-white group transition-all duration-300 hover:translate-y-[-2px] hover:shadow-xl active:scale-[0.98]"
     >
       <div className="aspect-square bg-gray-100 relative overflow-hidden">
         {notification.image ? (
-          <img
+          <Image
             src={notification.image}
             alt={notification.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-200"
+            unoptimized
           />
         ) : notification.type === 'expiry' || notification.type === 'warning' ? (
            <div className="w-full h-full flex items-center justify-center bg-red-50">
-            <img 
+            <Image 
               src="/images/notifications/expiry.png" 
               alt="Warning"
-              className="w-16 h-16 object-contain group-hover:scale-110 transition-transform duration-200"
+              width={64}
+              height={64}
+              className="object-contain group-hover:scale-110 transition-transform duration-200"
             />
            </div>
         ) : (

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
 import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import Portal from './Portal';
 
 interface InventoryEditModalProps {
   item: InventoryItemWithId | null;
@@ -95,15 +96,16 @@ export default function InventoryEditModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      onClick={onClose}
-    >
-      <div className="bg-black/50 absolute inset-0" />
+    <Portal>
       <div
-        className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+        onClick={onClose}
       >
+        <div className="bg-black/50 absolute inset-0" />
+        <div
+          className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* ヘッダー */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-lg font-semibold text-gray-900">在庫を編集</h2>
@@ -286,5 +288,6 @@ export default function InventoryEditModal({
         </div>
       </div>
     </div>
+  </Portal>
   );
 }
