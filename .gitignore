@@ -189,7 +189,7 @@ next-env.d.ts
 # Claude Code
 .claude/
 
-# SQLite database
+# SQLite database (legacy - now using PostgreSQL via Docker)
 *.db
 *.db-journal
 
