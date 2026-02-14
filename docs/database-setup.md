@@ -1,4 +1,4 @@
-# データベース環境構築手順
+# データベース環境構築手順（PostgreSQL）
 
 ## 前提条件
 
@@ -122,6 +122,85 @@ npm run dev
 ```
 
 ブラウザで `http://localhost:3000` にアクセスし、アプリケーションが正常に動作することを確認してください。
+
+---
+
+## SQLite からの移行手順（既存開発者向け）
+
+以前の `main` ブランチでは SQLite（`prisma/dev.db`）を使用していました。
+`feature/migration-to-postgre` ブランチ以降は **PostgreSQL（Docker Compose）** に移行しています。
+
+既にローカルで開発していた場合は、以下の手順で移行してください。
+
+### 1. ブランチの切り替え
+
+```bash
+git fetch origin
+git checkout feature/migration-to-postgre
+# または main にマージ済みの場合
+git pull origin main
+```
+
+> ブランチ切り替え時に `prisma/schema.prisma` と `prisma/migrations/` が自動的に更新されます。
+
+### 2. 旧 SQLite データベースファイルの削除
+
+```bash
+# プロジェクトルートで実行
+rm -f prisma/dev.db prisma/dev.db-journal
+```
+
+> SQLite のデータは PostgreSQL に自動移行されません。開発データが必要な場合はシードで再投入します。
+
+### 3. Docker Desktop のインストール・起動
+
+Docker Desktop がインストールされていない場合は [公式サイト](https://www.docker.com/products/docker-desktop/) からインストールしてください。
+
+起動後、画面左下のステータスが **"Engine running"** になっていることを確認します。
+
+### 4. 環境変数の変更
+
+`.env`（または `.env.local`）の `DATABASE_URL` を以下に変更してください。
+
+```diff
+- DATABASE_URL="file:./dev.db"
++ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mini_hackathon?schema=public"
+```
+
+### 5. PostgreSQL コンテナの起動
+
+```bash
+docker compose up -d
+```
+
+### 6. 依存関係の更新と Prisma Client の再生成
+
+```bash
+npm install
+npx prisma generate
+```
+
+### 7. マイグレーションの適用
+
+```bash
+npx prisma migrate dev
+```
+
+> 既にマイグレーションファイルが用意されているため、新規のマイグレーション名は不要です。
+
+### 8. シードデータの投入（任意）
+
+```bash
+npm run db:seed
+```
+
+### 9. 動作確認
+
+```bash
+npm run dev
+```
+
+ブラウザで `http://localhost:3000` にアクセスし、正常に動作することを確認してください。
 
 ---
 
