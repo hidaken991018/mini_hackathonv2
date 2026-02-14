@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
