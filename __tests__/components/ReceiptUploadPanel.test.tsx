@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
+import axiosInstance from '@/lib/axios';
 
 jest.mock('@/lib/axios', () => ({
   __esModule: true,
@@ -26,9 +27,11 @@ class MockFileReader {
 }
 
 describe('ReceiptUploadPanel', () => {
+  const mockedAxios = axiosInstance as jest.Mocked<typeof axiosInstance>;
+
   beforeEach(() => {
     jest.restoreAllMocks();
-    global.fetch = jest.fn();
+    mockedAxios.post.mockReset();
     Object.defineProperty(global, 'FileReader', {
       writable: true,
       value: MockFileReader,
@@ -92,12 +95,11 @@ describe('ReceiptUploadPanel', () => {
   });
 
   it('OCRで食材が抽出できない場合に手動入力フォールバックを表示する', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    mockedAxios.post.mockResolvedValue({
+      data: {
         success: true,
         data: { items: [] },
-      }),
+      },
     });
 
     const { container } = render(<ReceiptUploadPanel />);

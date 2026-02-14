@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
 import { calculateRemainingQuantity, normalizeUnit } from '@/lib/units';
+import { canUserCookRecipe } from '@/lib/recipe-cook-ownership';
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,34 @@ export async function POST(
       return NextResponse.json(
         { error: '指定されたレシピが見つかりません' },
         { status: 404 }
+      );
+    }
+
+    let hasLinkedNotification = false;
+    if (!recipe.userId) {
+      const linkedNotification = await prisma.notification.findFirst({
+        where: {
+          recipeId,
+          userId,
+        },
+        select: { id: true },
+      });
+      hasLinkedNotification = Boolean(linkedNotification);
+    }
+
+    const canCook = canUserCookRecipe({
+      recipeUserId: recipe.userId,
+      requesterUserId: userId!,
+      hasLinkedNotification,
+    });
+
+    if (!canCook) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'このレシピを調理する権限がありません',
+        },
+        { status: 403 },
       );
     }
 
