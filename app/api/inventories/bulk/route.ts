@@ -1,11 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
+import { getFoodCategoryName } from '@/lib/expiry-defaults';
 
 export const dynamic = 'force-dynamic'
 
 type InventoryItemInput = {
   name: string;
+  category?: string;
   quantityValue?: number;
   quantityUnit?: string;
   expireDate?: string;
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId,
             name: item.name,
+            category: item.category || getFoodCategoryName(item.name),
             quantityValue: item.quantityValue,
             quantityUnit: item.quantityUnit,
             expireDate: item.expireDate ? new Date(item.expireDate) : null,

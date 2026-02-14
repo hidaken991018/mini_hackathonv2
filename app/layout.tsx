@@ -20,6 +20,9 @@ const yuseiMagic = Yusei_Magic({
 export const metadata: Metadata = {
   title: "syufy",
   description: "レシート/冷蔵庫写真やテキストをノートとして記録し、AIチャットと通知で回すアプリ",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

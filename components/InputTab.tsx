@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Note, ReceiptAnalysisResult, InventoryItem } from '@/types';
 import CreateNoteModal from '@/components/CreateNoteModal';
 import axios from 'axios';
+import Image from 'next/image';
 
 // デフォルトユーザーID（認証実装前の暫定対応）
 const DEFAULT_USER_ID = 'mock-user-001';
@@ -170,11 +171,13 @@ export default function InputTab({
                 <div className="flex items-start gap-3">
                   {/* サムネイル */}
                   {note.images.length > 0 && (
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                      <img
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 relative">
+                      <Image
                         src={note.images[0]}
                         alt=""
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                   )}
@@ -227,10 +230,12 @@ export default function InputTab({
                       key={index}
                       className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 group"
                     >
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={`添付画像 ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                       <button
                         onClick={() => handleRemoveImage(index)}

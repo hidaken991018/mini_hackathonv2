@@ -2,6 +2,7 @@
 
 import { Note } from '@/types';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface NoteCardProps {
   note: Note;
@@ -45,11 +46,13 @@ export default function NoteCard({ note, onUpdate, onClick }: NoteCardProps) {
       <div className="flex gap-4">
         {note.images.length > 0 && (
           <div className="flex-shrink-0">
-            <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100">
-              <img
+            <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 relative">
+              <Image
                 src={note.images[0]}
                 alt="ノート画像"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
             </div>
           </div>
@@ -71,16 +74,18 @@ export default function NoteCard({ note, onUpdate, onClick }: NoteCardProps) {
           {note.images.length > 1 && (
             <div className="mt-2 flex gap-2">
               {note.images.slice(1, 3).map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100"
-                >
-                  <img
-                    src={imageUrl}
-                    alt={`添付画像 ${index + 2}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                  <div
+                    key={index}
+                    className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 relative"
+                  >
+                    <Image
+                      src={imageUrl}
+                      alt={`添付画像 ${index + 2}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
               ))}
             </div>
           )}

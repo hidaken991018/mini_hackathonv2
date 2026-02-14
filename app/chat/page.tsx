@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import ChatMessageList from '@/components/ChatMessageList';
 import ChatInput from '@/components/ChatInput';
+import MainLayout from '@/components/MainLayout';
 import { Message } from '@/types';
 
 export default function ChatPage() {
@@ -43,7 +44,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <MainLayout>
       <ScreenHeader title="AI Chat" />
       <ChatMessageList messages={messages} />
       <ChatInput
@@ -52,6 +53,6 @@ export default function ChatPage() {
         onSend={handleSendMessage}
       />
       <BottomNav />
-    </div>
+    </MainLayout>
   );
 }

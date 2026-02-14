@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const data = inventories.map((inv) => ({
       id: inv.id,
       name: inv.name,
+      category: inv.category,
       quantityValue: inv.quantityValue,
       quantityUnit: inv.quantityUnit,
       expireDate: inv.expireDate?.toISOString().split('T')[0] ?? null,
