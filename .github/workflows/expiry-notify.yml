@@ -14,13 +14,11 @@ jobs:
         env:
           NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
           BASE_URL: ${{ secrets.NOTIFY_BASE_URL }}
-          USER_ID: ${{ secrets.NOTIFY_USER_ID }}
         run: |
-          if [ -z "$NOTIFY_SECRET" ] || [ -z "$BASE_URL" ] || [ -z "$USER_ID" ]; then
-            echo "Missing secrets: NOTIFY_SECRET / NOTIFY_BASE_URL / NOTIFY_USER_ID"
+          if [ -z "$NOTIFY_SECRET" ] || [ -z "$BASE_URL" ]; then
+            echo "Missing secrets: NOTIFY_SECRET / NOTIFY_BASE_URL"
             exit 1
           fi
           curl -sS -X POST "$BASE_URL/api/notifications/expiry" \
             -H "Content-Type: application/json" \
-            -H "x-notify-secret: $NOTIFY_SECRET" \
-            -d "{\"userId\":\"$USER_ID\"}"
+            -H "x-notify-secret: $NOTIFY_SECRET"

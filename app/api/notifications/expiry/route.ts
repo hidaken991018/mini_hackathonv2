@@ -25,6 +25,113 @@ const buildBody = (name: string, kindLabel: string, date: Date, daysUntil: numbe
   return `「${name}」の${kindLabel}が${daysUntil}日後（${dateText}）です。`;
 };
 
+async function processUserExpiry(userId: string): Promise<number> {
+  const inventories = await prisma.inventory.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      name: true,
+      quantityValue: true,
+      expireDate: true,
+      consumeBy: true,
+    },
+  });
+
+  const today = toStartOfDay(new Date());
+
+  const candidates: {
+    inventoryId: string;
+    name: string;
+    expiryKind: ExpiryKind;
+    expiryDate: Date;
+    daysUntil: number;
+    title: string;
+    body: string;
+  }[] = [];
+
+  inventories.forEach((item) => {
+    if (item.quantityValue !== null && item.quantityValue <= 0) return;
+
+    const configs: { kind: ExpiryKind; date: Date | null; offsets: number[] }[] = [
+      { kind: 'use_by', date: item.consumeBy, offsets: [3, 1, 0] },
+      { kind: 'best_before', date: item.expireDate, offsets: [7, 3, 0] },
+    ];
+
+    configs.forEach((config) => {
+      if (!config.date) return;
+      const expiryDate = toStartOfDay(config.date);
+      const daysUntil = Math.round((expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
+      if (!config.offsets.includes(daysUntil)) return;
+
+      const kindLabel = config.kind === 'use_by' ? '消費期限' : '賞味期限';
+      const title = buildTitle(item.name, kindLabel, daysUntil);
+      const body = buildBody(item.name, kindLabel, expiryDate, daysUntil);
+
+      candidates.push({
+        inventoryId: item.id,
+        name: item.name,
+        expiryKind: config.kind,
+        expiryDate,
+        daysUntil,
+        title,
+        body,
+      });
+    });
+  });
+
+  if (candidates.length === 0) return 0;
+
+  const inventoryIds = Array.from(new Set(candidates.map((c) => c.inventoryId)));
+  const expiryDates = Array.from(
+    new Set(candidates.map((c) => c.expiryDate.toISOString())),
+  ).map((iso) => new Date(iso));
+  const titles = Array.from(new Set(candidates.map((c) => c.title)));
+
+  const existing = await prisma.notification.findMany({
+    where: {
+      userId,
+      type: 'expiry',
+      inventoryId: { in: inventoryIds },
+      expiryDate: { in: expiryDates },
+      title: { in: titles },
+    },
+    select: {
+      inventoryId: true,
+      expiryKind: true,
+      expiryDate: true,
+      title: true,
+    },
+  });
+
+  const existingKey = new Set(
+    existing.map(
+      (item) =>
+        `${item.inventoryId ?? ''}|${item.expiryKind ?? ''}|${item.expiryDate?.toISOString() ?? ''}|${item.title}`,
+    ),
+  );
+
+  const toCreate = candidates.filter((candidate) => {
+    const key = `${candidate.inventoryId}|${candidate.expiryKind}|${candidate.expiryDate.toISOString()}|${candidate.title}`;
+    return !existingKey.has(key);
+  });
+
+  if (toCreate.length === 0) return 0;
+
+  const result = await prisma.notification.createMany({
+    data: toCreate.map((candidate) => ({
+      userId,
+      type: 'expiry',
+      title: candidate.title,
+      body: candidate.body,
+      inventoryId: candidate.inventoryId,
+      expiryKind: candidate.expiryKind,
+      expiryDate: candidate.expiryDate,
+    })),
+  });
+
+  return result.count;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const expectedSecret = process.env.NOTIFY_SECRET;
@@ -43,125 +150,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { userId } = body;
 
-    if (!userId || typeof userId !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'userId が必要です' },
-        { status: 400 },
-      );
+    let targetUserIds: string[];
+    if (userId && typeof userId === 'string') {
+      targetUserIds = [userId];
+    } else {
+      const users = await prisma.user.findMany({ select: { id: true } });
+      targetUserIds = users.map((u) => u.id);
     }
 
-    const inventories = await prisma.inventory.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        name: true,
-        quantityValue: true,
-        expireDate: true,
-        consumeBy: true,
-      },
-    });
-
-    const today = toStartOfDay(new Date());
-
-    const candidates: {
-      inventoryId: string;
-      name: string;
-      expiryKind: ExpiryKind;
-      expiryDate: Date;
-      daysUntil: number;
-      title: string;
-      body: string;
-    }[] = [];
-
-    inventories.forEach((item) => {
-      if (item.quantityValue !== null && item.quantityValue <= 0) return;
-
-      const configs: { kind: ExpiryKind; date: Date | null; offsets: number[] }[] = [
-        { kind: 'use_by', date: item.consumeBy, offsets: [3, 1, 0] },
-        { kind: 'best_before', date: item.expireDate, offsets: [7, 3, 0] },
-      ];
-
-      configs.forEach((config) => {
-        if (!config.date) return;
-        const expiryDate = toStartOfDay(config.date);
-        const daysUntil = Math.round((expiryDate.getTime() - today.getTime()) / MS_PER_DAY);
-        if (!config.offsets.includes(daysUntil)) return;
-
-        const kindLabel = config.kind === 'use_by' ? '消費期限' : '賞味期限';
-        const title = buildTitle(item.name, kindLabel, daysUntil);
-        const body = buildBody(item.name, kindLabel, expiryDate, daysUntil);
-
-        candidates.push({
-          inventoryId: item.id,
-          name: item.name,
-          expiryKind: config.kind,
-          expiryDate,
-          daysUntil,
-          title,
-          body,
-        });
+    if (targetUserIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: { createdCount: 0, processedUsers: 0 },
       });
-    });
-
-    if (candidates.length === 0) {
-      return NextResponse.json({ success: true, data: { createdCount: 0 } });
     }
 
-    const inventoryIds = Array.from(new Set(candidates.map((c) => c.inventoryId)));
-    const expiryDates = Array.from(
-      new Set(candidates.map((c) => c.expiryDate.toISOString())),
-    ).map((iso) => new Date(iso));
-    const titles = Array.from(new Set(candidates.map((c) => c.title)));
+    let totalCreated = 0;
 
-    const existing = await prisma.notification.findMany({
-      where: {
-        userId,
-        type: 'expiry',
-        inventoryId: { in: inventoryIds },
-        expiryDate: { in: expiryDates },
-        title: { in: titles },
-      },
-      select: {
-        inventoryId: true,
-        expiryKind: true,
-        expiryDate: true,
-        title: true,
-      },
-    });
-
-    const existingKey = new Set(
-      existing.map(
-        (item) =>
-          `${item.inventoryId ?? ''}|${item.expiryKind ?? ''}|${item.expiryDate?.toISOString() ?? ''}|${item.title}`,
-      ),
-    );
-
-    const toCreate = candidates.filter((candidate) => {
-      const key = `${candidate.inventoryId}|${candidate.expiryKind}|${candidate.expiryDate.toISOString()}|${candidate.title}`;
-      return !existingKey.has(key);
-    });
-
-    if (toCreate.length === 0) {
-      return NextResponse.json({ success: true, data: { createdCount: 0 } });
+    for (const uid of targetUserIds) {
+      const count = await processUserExpiry(uid);
+      totalCreated += count;
     }
-
-    const result = await prisma.notification.createMany({
-      data: toCreate.map((candidate) => ({
-        userId,
-        type: 'expiry',
-        title: candidate.title,
-        body: candidate.body,
-        inventoryId: candidate.inventoryId,
-        expiryKind: candidate.expiryKind,
-        expiryDate: candidate.expiryDate,
-      })),
-    });
 
     return NextResponse.json({
       success: true,
-      data: { createdCount: result.count },
+      data: { createdCount: totalCreated, processedUsers: targetUserIds.length },
     });
   } catch (error) {
     console.error('Expiry notification generate error:', error);
