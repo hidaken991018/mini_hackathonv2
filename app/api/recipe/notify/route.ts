@@ -94,6 +94,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // リクエストボディから生成パラメータを取得
+    const requestBody = await request.json().catch(() => ({}));
+    const servings: number =
+      typeof requestBody.servings === 'number' && requestBody.servings >= 1
+        ? Math.min(Math.floor(requestBody.servings), 10)
+        : 2;
+    const excludeIngredients: string[] = Array.isArray(requestBody.excludeIngredients)
+      ? requestBody.excludeIngredients
+          .filter((s: unknown): s is string => typeof s === 'string' && s.trim().length > 0)
+          .map((s: string) => s.trim())
+          .slice(0, 20)
+      : [];
+
     const inventories = await prisma.inventory.findMany({
       where: { userId },
       select: {
@@ -103,7 +116,6 @@ export async function POST(request: NextRequest) {
         expireDate: true,
         consumeBy: true,
       },
-      orderBy: { updatedAt: 'desc' },
     });
 
     if (inventories.length === 0) {
@@ -113,7 +125,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const inventoryList = inventories.map(formatInventoryLine).join('\n');
+    // 期限が近い順にソート（nullは末尾）
+    const sortedInventories = [...inventories].sort((a, b) => {
+      const dateA = a.consumeBy ?? a.expireDate;
+      const dateB = b.consumeBy ?? b.expireDate;
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // 除外食材をフィルタリング
+    const filteredInventories = excludeIngredients.length > 0
+      ? sortedInventories.filter(item =>
+          !excludeIngredients.some(exc =>
+            normalize(item.name).includes(normalize(exc)) ||
+            normalize(exc).includes(normalize(item.name))
+          )
+        )
+      : sortedInventories;
+
+    const inventoryList = filteredInventories.map(formatInventoryLine).join('\n');
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
@@ -165,17 +197,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const excludeSection = excludeIngredients.length > 0
+      ? `\n除外食材（アレルギー・苦手）: ${excludeIngredients.join('、')}\n- 上記の食材は絶対に使用しないこと`
+      : '';
+
     const prompt = `あなたは家庭料理のレシピ提案AIです。
-次の在庫リストだけを使って、可能な限り「在庫のみ」で作れるレシピを1つ作成してください。
-もし在庫だけでは現実的に難しい場合のみ、不足する材料を missingIngredients に明示してください。
+次の在庫リストを使って、${servings}人分のレシピを1つ作成してください。
 
-ルール:
-- 可能なら必ず在庫のみで作る（canMakeWithInventory=true, missingIngredients=[]）
+重要ルール:
+- 【必須】賞味期限・消費期限が近い食材（リスト上位）を優先的に使うこと
+- 可能なら在庫のみで作る（canMakeWithInventory=true, missingIngredients=[]）
 - 在庫だけでは難しい場合は canMakeWithInventory=false にして、足りない材料を missingIngredients に列挙
-- ingredients はレシピで使う材料のみ記載
+- ingredients はレシピで使う材料と分量を${servings}人分で記載
 - steps は調理手順を簡潔に、5〜8ステップ程度
+- servings には "${servings}人分" を設定すること${excludeSection}
 
-在庫リスト:
+在庫リスト（期限が近い順）:
 ${inventoryList}
 `;
 
@@ -196,8 +233,7 @@ ${inventoryList}
           {
             success: false,
             error: 'レシピ生成中にエラーが発生しました',
-            details: 'GeminiのJSON解析に失敗しました',
-            rawResponse: retryText.slice(0, 800),
+            ...(process.env.NODE_ENV === 'development' && { details: 'GeminiのJSON解析に失敗しました', rawResponse: retryText.slice(0, 800) }),
           },
           { status: 502 },
         );
@@ -408,7 +444,7 @@ ${inventoryList}
       {
         success: false,
         error: 'レシピ生成中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 },
     );

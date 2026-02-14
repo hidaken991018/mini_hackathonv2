@@ -76,6 +76,8 @@ export const UNIT_NORMALIZATION: Record<string, string> = {
   かけ: '片',
   カケ: '片',
   かけら: '片',
+  ふくろ: '袋',
+  フクロ: '袋',
 
   // 曖昧表現
   しょうしょう: '少々',
@@ -115,6 +117,7 @@ export const UNIT_CATEGORIES: Record<string, UnitCategory> = {
   枚: 'COUNT',
   束: 'COUNT',
   パック: 'COUNT',
+  袋: 'COUNT',
   玉: 'COUNT',
   株: 'COUNT',
   房: 'COUNT',
@@ -186,7 +189,7 @@ export const INGREDIENT_DENSITIES: IngredientDensity[] = [
   { name: 'ベーキングパウダー', densityGPerMl: 0.8, aliases: ['BP'] },
 
   // その他
-  { name: 'バター', densityGPerMl: 0.95 },
+  { name: 'バター', densityGPerMl: 0.95, aliases: ['無塩バター', '有塩バター', 'マーガリン'] },
   { name: 'ヨーグルト', densityGPerMl: 1.05, aliases: ['プレーンヨーグルト'] },
 ];
 
@@ -200,6 +203,32 @@ export const BASE_UNITS: Record<UnitCategory, string> = {
   COUNT: '個',
   IMPRECISE: '',
   UNKNOWN: '',
+};
+
+/**
+ * 単位ごとの消費量マッピング
+ * COUNT系単位 → 1, MASS系 → 100 (g基準), VOLUME系 → 100 (ml基準)
+ */
+export const CONSUME_AMOUNTS: Record<string, { amount: number; label: string }> = {
+  // COUNT系 → -1
+  個: { amount: 1, label: '-1' },
+  本: { amount: 1, label: '-1' },
+  パック: { amount: 1, label: '-1' },
+  袋: { amount: 1, label: '-1' },
+  房: { amount: 1, label: '-1' },
+  束: { amount: 1, label: '-1' },
+  枚: { amount: 1, label: '-1' },
+  玉: { amount: 1, label: '-1' },
+  株: { amount: 1, label: '-1' },
+  切れ: { amount: 1, label: '-1' },
+  片: { amount: 1, label: '-1' },
+  // MASS系 → -100g
+  g: { amount: 100, label: '-100g' },
+  kg: { amount: 0.1, label: '-100g' },
+  // VOLUME系 → -100ml
+  ml: { amount: 100, label: '-100ml' },
+  L: { amount: 0.1, label: '-100ml' },
+  cc: { amount: 100, label: '-100ml' },
 };
 
 /**

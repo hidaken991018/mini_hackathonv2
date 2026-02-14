@@ -52,7 +52,7 @@ describe('InventoryItem', () => {
       />
     );
 
-    const consumeButton = screen.getByRole('button', { name: '1つ消費' });
+    const consumeButton = screen.getByRole('button', { name: '-1消費' });
     fireEvent.click(consumeButton);
 
     expect(mockOnConsume).toHaveBeenCalledWith('inv-1');
@@ -85,7 +85,7 @@ describe('InventoryItem', () => {
       />
     );
 
-    const consumeButton = screen.getByRole('button', { name: '1つ消費' });
+    const consumeButton = screen.getByRole('button', { name: '-1消費' });
     fireEvent.click(consumeButton);
 
     expect(mockOnConsume).toHaveBeenCalledTimes(1);
@@ -102,7 +102,7 @@ describe('InventoryItem', () => {
       />
     );
 
-    const consumeButton = screen.getByRole('button', { name: '1つ消費' });
+    const consumeButton = screen.getByRole('button', { name: '-1消費' });
     expect(consumeButton).toBeDisabled();
   });
 

@@ -9,6 +9,7 @@ import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeSlideModal from '@/components/RecipeSlideModal';
 import NotificationCard from '@/components/NotificationCard';
+import MainLayout from '@/components/MainLayout';
 import { Notification } from '@/types';
 
 // 在庫アイテムの型（ローカル状態用）
@@ -124,7 +125,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <MainLayout>
       <ScreenHeader
         title="Notifications"
         rightAction={
@@ -136,9 +137,9 @@ export default function NotificationsPage() {
           </button>
         }
       />
-      <div className="flex-1 overflow-y-auto pb-20 bg-gray-50">
+      <div className="bg-gray-50/10">
         <div className="px-4 py-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {notifications.map((notification) => (
               <NotificationCard
                 key={notification.id}
@@ -151,7 +152,6 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <BottomNav />
       <ReceiptUploadPanel />
 
       {/* レシピスライドモーダル */}
@@ -161,6 +161,6 @@ export default function NotificationsPage() {
         onMarkAsRead={handleMarkAsRead}
         onCookComplete={handleCookComplete}
       />
-    </div>
+    </MainLayout>
   );
 }

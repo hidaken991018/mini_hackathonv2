@@ -3,8 +3,22 @@
 import { useRef, useState } from 'react';
 import axiosInstance from '@/lib/axios';
 import { InventoryItem } from '@/types';
+import UnitSelector from './UnitSelector';
+import ExpiryDateInput from './ExpiryDateInput';
+import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import InventoryManualAddModal from './InventoryManualAddModal';
+import Portal from './Portal';
+import Image from 'next/image';
 
-export default function ReceiptUploadPanel() {
+type ReceiptUploadPanelProps = {
+  launcherPositionClassName?: string;
+  onInventoryRegistered?: () => void;
+};
+
+export default function ReceiptUploadPanel({
+  launcherPositionClassName = 'bottom-32 right-4',
+  onInventoryRegistered,
+}: ReceiptUploadPanelProps) {
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -14,15 +28,48 @@ export default function ReceiptUploadPanel() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewItems, setPreviewItems] = useState<InventoryItem[]>([]);
   const [previewImageUrls, setPreviewImageUrls] = useState<string[]>([]);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [analysisFallbackMessage, setAnalysisFallbackMessage] = useState<string | null>(null);
 
   const handleReceiptClick = () => {
     if (isAnalyzing) return;
+    setAnalysisFallbackMessage(null);
     receiptInputRef.current?.click();
   };
 
   const handleCameraClick = () => {
     if (isAnalyzing) return;
+    setAnalysisFallbackMessage(null);
     cameraInputRef.current?.click();
+  };
+
+  const handleOpenManualModal = () => {
+    setAnalysisFallbackMessage(null);
+    setShowManualModal(true);
+  };
+
+  const handleOpenActionSheet = () => {
+    setShowActionSheet(true);
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+  };
+
+  const handleSelectManualOption = () => {
+    setShowActionSheet(false);
+    handleOpenManualModal();
+  };
+
+  const handleSelectReceiptOption = () => {
+    setShowActionSheet(false);
+    handleReceiptClick();
+  };
+
+  const handleSelectCameraOption = () => {
+    setShowActionSheet(false);
+    handleCameraClick();
   };
 
   const handleReceiptChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +82,7 @@ export default function ReceiptUploadPanel() {
 
     const allItems: InventoryItem[] = [];
     const allImageUrls: string[] = [];
+    let hadAnalysisFailure = false;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -48,21 +96,23 @@ export default function ReceiptUploadPanel() {
 
         allImageUrls.push(imageUrl);
 
-        const response = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
-        });
+        try {
+          const { data } = await axiosInstance.post('/api/analyze-receipt', { imageData: imageUrl });
 
-        const data = await response.json();
-
-        if (data.success && data.data.items) {
-          allItems.push(...data.data.items);
+          if (data.success && Array.isArray(data.data?.items)) {
+            allItems.push(...data.data.items);
+          } else {
+            hadAnalysisFailure = true;
+          }
+        } catch (error) {
+          console.error(`Receipt analysis error for file ${i + 1}:`, error);
+          hadAnalysisFailure = true;
+        } finally {
+          setAnalyzedCount(i + 1);
         }
-
-        setAnalyzedCount(i + 1);
       } catch (error) {
         console.error(`Receipt analysis error for file ${i + 1}:`, error);
+        hadAnalysisFailure = true;
       }
     }
 
@@ -70,8 +120,12 @@ export default function ReceiptUploadPanel() {
       setPreviewItems(allItems);
       setPreviewImageUrls(allImageUrls);
       setShowPreview(true);
+      setAnalysisFallbackMessage(null);
     } else {
-      alert('レシート解析に失敗しました');
+      const fallbackMessage = hadAnalysisFailure
+        ? '文字欠けや読み取り失敗の可能性があります。手動入力してください。'
+        : 'レシートから食材を抽出できませんでした。手動入力してください。';
+      setAnalysisFallbackMessage(fallbackMessage);
     }
 
     setIsAnalyzing(false);
@@ -80,6 +134,9 @@ export default function ReceiptUploadPanel() {
 
     if (receiptInputRef.current) {
       receiptInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -97,6 +154,7 @@ export default function ReceiptUploadPanel() {
         setShowPreview(false);
         setPreviewItems([]);
         setPreviewImageUrls([]);
+        onInventoryRegistered?.();
 
         alert(`${response.data.data.createdCount}件の食材を在庫に登録しました`);
       } else {
@@ -119,7 +177,7 @@ export default function ReceiptUploadPanel() {
   const handleUpdateItem = (
     index: number,
     field: keyof InventoryItem,
-    value: string | number | undefined
+    value: string | number | boolean | undefined
   ) => {
     setPreviewItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
@@ -142,67 +200,84 @@ export default function ReceiptUploadPanel() {
     return dateStr;
   };
 
+  /**
+   * アイテムの既存データから期限タイプを推定する
+   */
+  const getItemExpiryType = (item: InventoryItem): ExpiryType => {
+    if (item.consumeBy) return 'consume_by';
+    if (item.expireDate) {
+      const detected = getExpiryType(item.name);
+      return detected === 'freshness' ? 'freshness' : 'best_before';
+    }
+    return getExpiryType(item.name) ?? 'best_before';
+  };
+
+  /**
+   * 期限タイプ切り替え時のハンドラ
+   * 日付値をもう片方のフィールドに移動する
+   */
+  const handleExpiryTypeChange = (index: number, item: InventoryItem, newType: ExpiryType) => {
+    const currentDate = item.consumeBy || item.expireDate || '';
+    setPreviewItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== index) return it;
+        if (newType === 'consume_by') {
+          return { ...it, consumeBy: currentDate, expireDate: undefined };
+        } else {
+          return { ...it, expireDate: currentDate, consumeBy: undefined };
+        }
+      })
+    );
+  };
+
+  /**
+   * 期限日付変更時のハンドラ
+   * 現在のタイプに応じて適切なフィールドにセット
+   */
+  const handleExpiryDateChange = (index: number, item: InventoryItem, date: string) => {
+    const currentType = getItemExpiryType(item);
+    setPreviewItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== index) return it;
+        if (currentType === 'consume_by') {
+          return { ...it, consumeBy: date || undefined, expireDate: undefined };
+        } else {
+          return { ...it, expireDate: date || undefined, consumeBy: undefined };
+        }
+      })
+    );
+  };
+
   return (
     <>
-      <div className="fixed bottom-20 right-4 z-30 flex items-center gap-3">
+      <div className={`fixed z-30 flex flex-col items-end gap-2 ${launcherPositionClassName}`}>
+        {analysisFallbackMessage && (
+          <div className="w-72 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 p-3 shadow-md">
+            <p className="text-sm">{analysisFallbackMessage}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={handleOpenManualModal}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                手動入力する
+              </button>
+              <button
+                onClick={() => setAnalysisFallbackMessage(null)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={handleReceiptClick}
-          disabled={isAnalyzing}
-          aria-label={
-            isAnalyzing
-              ? `レシートを読み取り中 (${analyzedCount}/${analyzingCount})`
-              : 'レシート画像を選択'
-          }
-          className={`w-14 h-14 rounded-full shadow-xl border transition-all duration-200 flex items-center justify-center ${
-            isAnalyzing
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed border-gray-300'
-              : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:scale-105 active:scale-95'
-          }`}
-        >
-          {isAnalyzing ? (
-            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 0 012-2h2a2 0 012 2m-6 9l2 2 4-4"
-              />
-            </svg>
-          )}
-        </button>
-        <button
-          onClick={handleCameraClick}
-          disabled={isAnalyzing}
-          aria-label="カメラで撮影"
-          className={`w-14 h-14 rounded-full shadow-xl border transition-all duration-200 flex items-center justify-center ${
-            isAnalyzing
-              ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed'
-              : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50 hover:scale-105 active:scale-95'
-          }`}
+          onClick={handleOpenActionSheet}
+          aria-label="在庫入力メニューを開く"
+          className="w-14 h-14 rounded-full shadow-xl border transition-all duration-200 flex items-center justify-center bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:scale-105 active:scale-95"
         >
           <svg
-            className="w-6 h-6"
+            className="w-7 h-7"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -211,17 +286,114 @@ export default function ReceiptUploadPanel() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              d="M12 4v16m8-8H4"
             />
           </svg>
         </button>
       </div>
+
+      {showActionSheet && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-[100] flex items-end"
+            onClick={handleCloseActionSheet}
+          >
+            <div className="absolute inset-0 bg-black/40" />
+            <div
+              className="relative w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-2xl border-t border-gray-100 p-4 pb-6 space-y-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleSelectCameraOption}
+                disabled={isAnalyzing}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span className="text-sm font-medium">カメラで撮影</span>
+              </button>
+
+              <button
+                onClick={handleSelectReceiptOption}
+                disabled={isAnalyzing}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 3h10a2 2 0 012 2v14l-2-1.5L15 19l-2-1.5L11 19l-2-1.5L7 19V5a2 2 0 012-2z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 8h6M10 11h6M10 14h4"
+                  />
+                </svg>
+                <span className="text-sm font-medium">レシートを読み取る</span>
+              </button>
+
+              <button
+                onClick={handleSelectManualOption}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 hover:bg-gray-50 flex items-center gap-3"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span className="text-sm font-medium">手入力で追加</span>
+              </button>
+
+              <button
+                onClick={handleCloseActionSheet}
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-medium mt-2"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      <InventoryManualAddModal
+        isOpen={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        onRegistered={() => onInventoryRegistered?.()}
+      />
+
       <input
         ref={receiptInputRef}
         type="file"
@@ -240,231 +412,231 @@ export default function ReceiptUploadPanel() {
       />
 
       {showPreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={handleClosePreview}
-        >
-          <div className="bg-black/50 absolute inset-0" />
+        <Portal>
           <div
-            className="relative bg-white rounded-2xl max-w-lg w-[95%] max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            onClick={handleClosePreview}
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-              <h3 className="text-lg font-semibold text-gray-900">在庫に登録</h3>
-              <button
-                onClick={handleClosePreview}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
-                aria-label="閉じる"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div className="bg-black/50 absolute inset-0" />
+            <div
+              className="relative bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                <h3 className="text-lg font-semibold text-gray-900">在庫に登録</h3>
+                <button
+                  onClick={handleClosePreview}
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  aria-label="閉じる"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {previewImageUrls.length > 0 && (
-              <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
-                <div
-                  className={`grid gap-2 ${
-                    previewImageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                  }`}
-                >
-                  {previewImageUrls.map((url, index) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt={`レシート ${index + 1}`}
-                      className="w-full max-h-32 object-contain rounded-lg"
+                  <svg
+                    className="w-5 h-5 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                  ))}
-                </div>
+                  </svg>
+                </button>
               </div>
-            )}
 
-            <div className="px-4 py-4 flex-1 min-h-0 overflow-y-auto">
-              {previewItems.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-4">
-                  食材が読み取れませんでした
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {previewItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 rounded-xl border border-gray-100"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) =>
-                            handleUpdateItem(index, 'name', e.target.value)
-                          }
-                          placeholder="食材名"
-                          className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              {previewImageUrls.length > 0 && (
+                <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                  <div
+                    className={`grid gap-2 ${
+                      previewImageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                    }`}
+                  >
+                    {previewImageUrls.map((url, index) => (
+                      <div key={index} className="relative w-full h-32">
+                        <Image
+                          src={url}
+                          alt={`レシート ${index + 1}`}
+                          fill
+                          className="object-contain rounded-lg"
+                          unoptimized
                         />
-                        <button
-                          onClick={() => handleDeleteItem(index)}
-                          className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                          aria-label="削除"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
                       </div>
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex-1 flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={item.quantityValue || ''}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'quantityValue',
-                                e.target.value ? Number(e.target.value) : undefined
-                              )
-                            }
-                            placeholder="数量"
-                            className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                          <input
-                            type="text"
-                            value={item.quantityUnit || ''}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'quantityUnit',
-                                e.target.value || undefined
-                              )
-                            }
-                            placeholder="単位"
-                            className="w-16 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="flex-1">
-                          <label className="block text-gray-500 mb-1">賞味期限</label>
-                          <input
-                            type="date"
-                            value={formatDateForInput(item.expireDate)}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'expireDate',
-                                e.target.value || undefined
-                              )
-                            }
-                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-gray-500 mb-1">消費期限</label>
-                          <input
-                            type="date"
-                            value={formatDateForInput(item.consumeBy)}
-                            onChange={(e) =>
-                              handleUpdateItem(
-                                index,
-                                'consumeBy',
-                                e.target.value || undefined
-                              )
-                            }
-                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <button
-                onClick={handleAddItem}
-                className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium hover:border-emerald-400 hover:text-emerald-600 transition-colors flex items-center justify-center gap-1"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                食材を追加
-              </button>
-            </div>
-
-            <div className="px-4 py-3 border-t border-gray-100 flex gap-3 flex-shrink-0">
-              <button
-                onClick={handleClosePreview}
-                className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleRegisterInventory}
-                disabled={
-                  previewItems.length === 0 ||
-                  previewItems.some((item) => !item.name.trim()) ||
-                  isRegistering
-                }
-                className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                {isRegistering ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    登録中...
-                  </span>
+              <div className="px-4 py-4 flex-1 min-h-0 overflow-y-auto">
+                {previewItems.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    食材が読み取れませんでした
+                  </p>
                 ) : (
-                  `在庫に登録 (${previewItems.length}件)`
+                  <div className="space-y-4">
+                    {previewItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-gray-50 rounded-xl border border-gray-100"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) =>
+                              handleUpdateItem(index, 'name', e.target.value)
+                            }
+                            placeholder="食材名"
+                            className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => handleDeleteItem(index)}
+                            className="w-8 h-8 rounded-full hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            aria-label="削除"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex-1 flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={item.quantityValue || ''}
+                              onChange={(e) =>
+                                handleUpdateItem(
+                                  index,
+                                  'quantityValue',
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                              placeholder="数量"
+                              className="w-20 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            />
+                            <UnitSelector
+                              value={item.quantityUnit || ''}
+                              onChange={(unit) =>
+                                handleUpdateItem(
+                                  index,
+                                  'quantityUnit',
+                                  unit || undefined
+                                )
+                              }
+                              placeholder="単位"
+                              className="w-20"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateItem(index, 'isStaple', !item.isStaple)
+                            }
+                            className={`flex-shrink-0 px-2 py-1.5 text-xs rounded-lg border transition-colors ${
+                              item.isStaple
+                                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                                : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                            }`}
+                            title={item.isStaple ? '常備品（調理で減らない）' : '使い切り（調理で減る）'}
+                          >
+                            {item.isStaple ? '常備品' : '使い切り'}
+                          </button>
+                        </div>
+
+                        <div className="text-xs">
+                          <ExpiryDateInput
+                            expiryType={getItemExpiryType(item)}
+                            date={
+                              getItemExpiryType(item) === 'consume_by'
+                                ? formatDateForInput(item.consumeBy)
+                                : formatDateForInput(item.expireDate)
+                            }
+                            onTypeChange={(type) => handleExpiryTypeChange(index, item, type)}
+                            onDateChange={(date) => handleExpiryDateChange(index, item, date)}
+                            foodName={item.name}
+                            compact
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </button>
+
+                <button
+                  onClick={handleAddItem}
+                  className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-sm font-medium hover:border-emerald-400 hover:text-emerald-600 transition-colors flex items-center justify-center gap-1"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  食材を追加
+                </button>
+              </div>
+
+              <div className="px-4 py-3 border-t border-gray-100 flex gap-3 flex-shrink-0">
+                <button
+                  onClick={handleClosePreview}
+                  className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleRegisterInventory}
+                  disabled={
+                    previewItems.length === 0 ||
+                    previewItems.some((item) => !item.name.trim()) ||
+                    isRegistering
+                  }
+                  className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isRegistering ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      登録中...
+                    </span>
+                  ) : (
+                    `在庫に登録 (${previewItems.length}件)`
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </>
   );
