@@ -37,6 +37,7 @@ export type Notification = {
 // 在庫アイテムの型（登録前）
 export type InventoryItem = {
   name: string;
+  category?: string;
   quantityValue?: number;
   quantityUnit?: string;
   expireDate?: string;
@@ -50,6 +51,7 @@ export type InventoryItem = {
 export type InventoryItemWithId = {
   id: string;
   name: string;
+  category?: string;
   quantityValue?: number;
   quantityUnit?: string;
   expireDate?: string;

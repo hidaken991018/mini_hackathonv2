@@ -6,6 +6,7 @@ import { InventoryItemWithId } from '@/types';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
 import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import Portal from './Portal';
 
 type InventoryManualAddModalProps = {
   isOpen: boolean;
@@ -156,174 +157,176 @@ export default function InventoryManualAddModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
-      onClick={handleClose}
-    >
-      <div className="bg-black/50 absolute inset-0" />
+    <Portal>
       <div
-        className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+        onClick={handleClose}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-lg font-semibold text-gray-900">在庫を手動で追加</h2>
-          <button
-            onClick={handleClose}
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
-            aria-label="閉じる"
-          >
-            <svg
-              className="w-5 h-5 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-140px)] space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              食材名
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="例: 卵"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                数量
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={formData.quantityValue}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, quantityValue: e.target.value }))
-                }
-                placeholder="1"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div className="w-28">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                単位
-              </label>
-              <UnitSelector
-                value={formData.quantityUnit}
-                onChange={(unit) =>
-                  setFormData((prev) => ({ ...prev, quantityUnit: unit }))
-                }
-                placeholder="個"
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              食材タイプ
-            </label>
+        <div className="bg-black/50 absolute inset-0" />
+        <div
+          className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
+            <h2 className="text-lg font-semibold text-gray-900">在庫を手動で追加</h2>
             <button
-              type="button"
-              onClick={() =>
-                setFormData((prev) => ({ ...prev, isStaple: !prev.isStaple }))
-              }
-              className={`w-full flex items-center justify-between px-4 py-2 border rounded-lg transition-colors ${
-                formData.isStaple
-                  ? 'bg-amber-50 border-amber-300 text-amber-700'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={handleClose}
+              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+              aria-label="閉じる"
             >
-              <span className="text-sm">
-                {formData.isStaple ? '常備品' : '使い切り食材'}
-              </span>
-              <span className="text-xs text-gray-400">
-                {formData.isStaple
-                  ? '調理しても在庫を減らさない'
-                  : '調理すると在庫を減らす'}
-              </span>
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              購入日
-            </label>
-            <input
-              type="date"
-              value={formData.purchaseDate}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, purchaseDate: e.target.value }))
+          <div className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-140px)] space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                食材名
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="例: 卵"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  数量
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.quantityValue}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, quantityValue: e.target.value }))
+                  }
+                  placeholder="1"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="w-28">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  単位
+                </label>
+                <UnitSelector
+                  value={formData.quantityUnit}
+                  onChange={(unit) =>
+                    setFormData((prev) => ({ ...prev, quantityUnit: unit }))
+                  }
+                  placeholder="個"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                食材タイプ
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, isStaple: !prev.isStaple }))
+                }
+                className={`w-full flex items-center justify-between px-4 py-2 border rounded-lg transition-colors ${
+                  formData.isStaple
+                    ? 'bg-amber-50 border-amber-300 text-amber-700'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-sm">
+                  {formData.isStaple ? '常備品' : '使い切り食材'}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {formData.isStaple
+                    ? '調理しても在庫を減らさない'
+                    : '調理すると在庫を減らす'}
+                </span>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                購入日
+              </label>
+              <input
+                type="date"
+                value={formData.purchaseDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, purchaseDate: e.target.value }))
+                }
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <ExpiryDateInput
+              expiryType={formData.expiryType}
+              date={
+                formData.expiryType === 'consume_by'
+                  ? formData.consumeBy
+                  : formData.expireDate
               }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              onTypeChange={handleExpiryTypeChange}
+              onDateChange={(date) => {
+                if (formData.expiryType === 'consume_by') {
+                  setFormData((prev) => ({ ...prev, consumeBy: date, expireDate: '' }));
+                } else {
+                  setFormData((prev) => ({ ...prev, expireDate: date, consumeBy: '' }));
+                }
+              }}
+              foodName={formData.name}
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                メモ
+              </label>
+              <textarea
+                value={formData.note}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, note: e.target.value }))
+                }
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
-          <ExpiryDateInput
-            expiryType={formData.expiryType}
-            date={
-              formData.expiryType === 'consume_by'
-                ? formData.consumeBy
-                : formData.expireDate
-            }
-            onTypeChange={handleExpiryTypeChange}
-            onDateChange={(date) => {
-              if (formData.expiryType === 'consume_by') {
-                setFormData((prev) => ({ ...prev, consumeBy: date, expireDate: '' }));
-              } else {
-                setFormData((prev) => ({ ...prev, expireDate: date, consumeBy: '' }));
-              }
-            }}
-            foodName={formData.name}
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              メモ
-            </label>
-            <textarea
-              value={formData.note}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, note: e.target.value }))
-              }
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+          <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+            <button
+              onClick={handleClose}
+              disabled={isSaving}
+              className="py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSaving || !formData.name.trim()}
+              className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isSaving ? '登録中...' : '在庫に追加'}
+            </button>
           </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
-          <button
-            onClick={handleClose}
-            disabled={isSaving}
-            className="py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSaving || !formData.name.trim()}
-            className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {isSaving ? '登録中...' : '在庫に追加'}
-          </button>
         </div>
       </div>
-    </div>
+    </Portal>
   );
 }
