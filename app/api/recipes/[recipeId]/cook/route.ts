@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { calculateRemainingQuantity, canConvert } from '@/lib/units';
+import { calculateRemainingQuantity, normalizeUnit } from '@/lib/units';
+import { canUserCookRecipe } from '@/lib/recipe-cook-ownership';
 
 export const dynamic = 'force-dynamic'
 
@@ -38,10 +39,42 @@ export async function POST(
       );
     }
 
+    let hasLinkedNotification = false;
+    if (!recipe.userId) {
+      const linkedNotification = await prisma.notification.findFirst({
+        where: {
+          recipeId,
+          userId,
+        },
+        select: { id: true },
+      });
+      hasLinkedNotification = Boolean(linkedNotification);
+    }
+
+    const canCook = canUserCookRecipe({
+      recipeUserId: recipe.userId,
+      requesterUserId: userId!,
+      hasLinkedNotification,
+    });
+
+    if (!canCook) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'このレシピを調理する権限がありません',
+        },
+        { status: 403 },
+      );
+    }
+
     const consumedIngredients: {
       name: string;
       quantityValue: number | null;
       quantityUnit: string | null;
+    }[] = [];
+    const skippedStapleIngredients: {
+      name: string;
+      reason: string;
     }[] = [];
     const deletedInventoryIds: string[] = [];
     const updatedInventories: { id: string; name: string; remaining: number }[] = [];
@@ -69,6 +102,15 @@ export async function POST(
         }
 
         if (inventory) {
+          // 常備品（バター、油、調味料等）は調理時に在庫を減らさない
+          if (inventory.isStaple) {
+            skippedStapleIngredients.push({
+              name: ingredient.name,
+              reason: '常備品のため在庫を減らしませんでした',
+            });
+            continue;
+          }
+
           const currentQty = inventory.quantityValue || 0;
           const consumeQty = ingredient.quantityValue || 0;
           const inventoryUnit = inventory.quantityUnit || '';
@@ -87,23 +129,50 @@ export async function POST(
           );
 
           if (remaining === null) {
-            // 単位変換不可の場合は従来の単純減算にフォールバック
-            const newQty = currentQty - consumeQty;
-            if (newQty <= 0) {
-              await tx.inventory.delete({
-                where: { id: inventory.id },
-              });
-              deletedInventoryIds.push(inventory.id);
+            // 単位変換不可の場合: 単位カテゴリを確認して安全に処理する
+            // 例: 在庫「牛乳 1本」(COUNT) vs レシピ「200ml」(VOLUME) → 換算不可
+            // 以前の処理: 1 - 200 = -199 → 不正な全削除（バグ）
+            const invCategory = normalizeUnit(inventoryUnit).category;
+            const ingCategory = normalizeUnit(ingredientUnit).category;
+
+            if (invCategory === ingCategory) {
+              // 同カテゴリだが換算不可（例: 異なるCOUNT単位同士）→ 1つ消費
+              const newQty = currentQty - 1;
+              if (newQty <= 0) {
+                await tx.inventory.delete({ where: { id: inventory.id } });
+                deletedInventoryIds.push(inventory.id);
+              } else {
+                await tx.inventory.update({
+                  where: { id: inventory.id },
+                  data: { quantityValue: newQty },
+                });
+                updatedInventories.push({
+                  id: inventory.id,
+                  name: inventory.name,
+                  remaining: newQty,
+                });
+              }
+            } else if (invCategory === 'COUNT') {
+              // 在庫がCOUNT（本,パック等）、レシピがMASS/VOLUME（g,ml等）
+              // → COUNT在庫を1つ消費する（「牛乳1本を使った」と解釈）
+              const newQty = currentQty - 1;
+              if (newQty <= 0) {
+                await tx.inventory.delete({ where: { id: inventory.id } });
+                deletedInventoryIds.push(inventory.id);
+              } else {
+                await tx.inventory.update({
+                  where: { id: inventory.id },
+                  data: { quantityValue: newQty },
+                });
+                updatedInventories.push({
+                  id: inventory.id,
+                  name: inventory.name,
+                  remaining: newQty,
+                });
+              }
             } else {
-              await tx.inventory.update({
-                where: { id: inventory.id },
-                data: { quantityValue: newQty },
-              });
-              updatedInventories.push({
-                id: inventory.id,
-                name: inventory.name,
-                remaining: newQty,
-              });
+              // 在庫がMASS/VOLUME、レシピがCOUNTなど → 換算不可のためスキップ
+              // 在庫は変更しない（ユーザーに手動管理を任せる）
             }
           } else if (remaining.value <= 0) {
             // 在庫がなくなったら削除
@@ -133,6 +202,7 @@ export async function POST(
         recipeId,
         recipeTitle: recipe.title,
         consumedIngredients,
+        skippedStapleIngredients,
         deletedInventoryIds,
         updatedInventories,
       },
@@ -144,7 +214,7 @@ export async function POST(
       {
         success: false,
         error: 'レシピ調理処理中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );

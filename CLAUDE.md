@@ -66,8 +66,12 @@ npm run db:seed      # シードデータ投入
 - `lib/axios.ts` - Axiosインスタンス（Firebaseトークン自動注入）
 - `lib/auth-helpers.ts` - `requireAuth()` APIルート用認証ヘルパー
 - `lib/image-storage.ts` - 画像を`public/images/`に保存
+- `lib/food-category.ts` - 常備品判定ロジック（`isStapleFood()`）
+- `lib/expiry-defaults.ts` - 食材カテゴリ別デフォルト期限推定
+- `lib/units/` - 単位正規化・換算・消費量ロジック
 - `types/index.ts` - 中央型定義
 - `prisma/schema.prisma` - データベーススキーマ定義（6モデル）
+- `docs/inventory-logic.md` - 食材管理ロジック仕様書（ビジネスロジック全体の定義）
 
 ### パターン
 - 全コンポーネントで`'use client'`ディレクティブ使用（クライアントサイドレンダリング）
