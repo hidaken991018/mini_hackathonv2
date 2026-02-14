@@ -201,6 +201,11 @@ public/images/infographics/
 # project plans
 plans/
 
+# Terraform
+cloud/.terraform/
+cloud/terraform.tfstate*
+cloud/terraform.tfvars
+cloud/*.tfplan
 # Codex local imported skills (do not commit)
 .agents/skills/claude-*/
 
