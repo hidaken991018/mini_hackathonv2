@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
-import { RecipeSourceType } from '@/types';
+import { RecipeMatchLabel, RecipeSourceType } from '@/types';
+import { checkRecipeAvailability } from '@/lib/units/comparator';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('query') || '';
     const sourceType = searchParams.get('sourceType') as RecipeSourceType | null;
+    const sortBy = searchParams.get('sort') || 'date';
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     // 総数を取得
     const total = await prisma.recipe.count({ where });
 
-    // レシピ一覧を取得
+    // レシピ一覧を取得（マッチ度計算のためingredientsもinclude）
     const recipes = await prisma.recipe.findMany({
       where,
       include: {
@@ -50,23 +52,59 @@ export async function GET(request: NextRequest) {
             steps: true,
           },
         },
+        ingredients: {
+          select: { name: true, quantityValue: true, quantityUnit: true },
+        },
       },
       orderBy: { updatedAt: 'desc' },
       take: limit,
       skip: offset,
     });
 
-    const data = recipes.map((recipe) => ({
-      id: recipe.id,
-      title: recipe.title,
-      description: recipe.description,
-      imageUrl: recipe.imageUrl,
-      cookingTime: recipe.cookingTime,
-      sourceType: recipe.sourceType as RecipeSourceType,
-      ingredientCount: recipe._count.ingredients,
-      stepCount: recipe._count.steps,
-      createdAt: recipe.createdAt.toISOString(),
-    }));
+    // マッチ度計算のためユーザー在庫を取得
+    const userInventories = await prisma.inventory.findMany({
+      where: { userId: userId! },
+      select: { name: true, quantityValue: true, quantityUnit: true },
+    });
+
+    const data = recipes.map((recipe) => {
+      // マッチ度スコアを計算
+      let matchScore: number | undefined;
+      let matchLabel: RecipeMatchLabel | undefined;
+
+      if (userInventories.length > 0 && recipe.ingredients.length > 0) {
+        const availability = checkRecipeAvailability(recipe.ingredients, userInventories);
+        const totalCount = availability.length;
+        const score = availability.reduce((sum, a) => {
+          if (a.status === 'available' || a.status === 'unknown') return sum + 1;
+          if (a.status === 'partial') return sum + 0.5;
+          return sum;
+        }, 0) / totalCount;
+
+        matchScore = Math.round(score * 100);
+        matchLabel = score >= 1.0 ? 'perfect' : score >= 0.5 ? 'partial' : 'low';
+      }
+
+      return {
+        id: recipe.id,
+        title: recipe.title,
+        description: recipe.description,
+        imageUrl: recipe.imageUrl,
+        cookingTime: recipe.cookingTime,
+        sourceType: recipe.sourceType as RecipeSourceType,
+        ingredientCount: recipe._count.ingredients,
+        stepCount: recipe._count.steps,
+        createdAt: recipe.createdAt.toISOString(),
+        updatedAt: recipe.updatedAt.toISOString(),
+        matchScore,
+        matchLabel,
+      };
+    });
+
+    // マッチ度順ソート
+    if (sortBy === 'match') {
+      data.sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1));
+    }
 
     return NextResponse.json({
       success: true,

@@ -250,16 +250,28 @@ describe('レシピAPI ユーティリティ関数', () => {
       expect(canEdit).toBe(false);
     });
 
-    it('AI生成レシピは編集不可', () => {
+    it('AI生成レシピは編集可能', () => {
       const sourceType = 'ai_generated';
-      const canEdit = sourceType !== 'ai_generated';
-      expect(canEdit).toBe(false);
+      const canEdit = sourceType === 'ai_generated' || sourceType === 'user_created';
+      expect(canEdit).toBe(true);
     });
 
     it('手入力レシピは編集可能', () => {
       const sourceType = 'user_created';
       const canEdit = sourceType !== 'ai_generated';
       expect(canEdit).toBe(true);
+    });
+
+    it('AI生成レシピは削除可能', () => {
+      const sourceType = 'ai_generated';
+      const canDelete = sourceType === 'ai_generated' || sourceType === 'user_created';
+      expect(canDelete).toBe(true);
+    });
+
+    it('手入力レシピは削除可能', () => {
+      const sourceType = 'user_created';
+      const canDelete = sourceType === 'ai_generated' || sourceType === 'user_created';
+      expect(canDelete).toBe(true);
     });
   });
 });
@@ -278,6 +290,7 @@ describe('レシピ一覧アイテムの変換', () => {
         steps: 3,
       },
       createdAt: new Date('2025-01-30'),
+      updatedAt: new Date('2025-01-31'),
     };
 
     const listItem = {
@@ -290,6 +303,7 @@ describe('レシピ一覧アイテムの変換', () => {
       ingredientCount: recipe._count.ingredients,
       stepCount: recipe._count.steps,
       createdAt: recipe.createdAt.toISOString(),
+      updatedAt: recipe.updatedAt.toISOString(),
     };
 
     expect(listItem.ingredientCount).toBe(5);

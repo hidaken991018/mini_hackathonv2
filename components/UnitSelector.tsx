@@ -8,7 +8,12 @@ import { useState, useRef, useEffect, useMemo } from 'react';
  * ユーザーがドロップダウンから選択できる単位。
  * レシピ専用の計量スプーン（大さじ、小さじ等）や曖昧表現（少々、適量等）は除外。
  */
-const UNIT_GROUPS = [
+type UnitGroup = {
+  label: string;
+  units: string[];
+};
+
+const DEFAULT_UNIT_GROUPS: UnitGroup[] = [
   {
     label: '個数',
     units: ['個', '本', '枚', 'パック', '袋', '房', '束', '玉', '株'],
@@ -23,9 +28,6 @@ const UNIT_GROUPS = [
   },
 ];
 
-/** すべての単位をフラットにしたリスト */
-const ALL_UNITS = UNIT_GROUPS.flatMap((group) => group.units);
-
 type UnitSelectorProps = {
   /** 現在選択されている単位 */
   value: string;
@@ -35,6 +37,8 @@ type UnitSelectorProps = {
   className?: string;
   /** プレースホルダー（デフォルト: "単位"） */
   placeholder?: string;
+  /** 表示する単位グループ（未指定時はデフォルト） */
+  unitGroups?: UnitGroup[];
 };
 
 /**
@@ -50,7 +54,10 @@ export default function UnitSelector({
   onChange,
   className = '',
   placeholder = '単位',
+  unitGroups,
 }: UnitSelectorProps) {
+  const activeUnitGroups = unitGroups ?? DEFAULT_UNIT_GROUPS;
+
   // ドロップダウンの開閉状態
   const [isOpen, setIsOpen] = useState(false);
   // 入力フィールドに表示するテキスト（フィルタリング用）
@@ -71,19 +78,24 @@ export default function UnitSelector({
     }
   }, [value, isOpen]);
 
+  const allUnits = useMemo(
+    () => activeUnitGroups.flatMap((group) => group.units),
+    [activeUnitGroups]
+  );
+
   // フィルタリングされた単位リスト（カテゴリ付き）
   // isFiltering=false（開いた直後）は全件表示、ユーザーが入力し始めたらフィルタ
   const filteredGroups = useMemo(() => {
-    if (!isFiltering) return UNIT_GROUPS;
+    if (!isFiltering) return activeUnitGroups;
 
     const query = inputText.toLowerCase().trim();
-    if (!query) return UNIT_GROUPS;
+    if (!query) return activeUnitGroups;
 
-    return UNIT_GROUPS.map((group) => ({
+    return activeUnitGroups.map((group) => ({
       ...group,
       units: group.units.filter((unit) => unit.toLowerCase().includes(query)),
     })).filter((group) => group.units.length > 0);
-  }, [inputText, isFiltering]);
+  }, [activeUnitGroups, inputText, isFiltering]);
 
   // フィルタリング後のフラットなリスト（キーボード操作用）
   const flatFiltered = useMemo(
@@ -128,7 +140,7 @@ export default function UnitSelector({
   /** ドロップダウンを閉じる（不正な入力は元に戻す） */
   function handleClose() {
     // 入力テキストが有効な単位であれば確定、そうでなければ元の値に戻す
-    if (ALL_UNITS.includes(inputText)) {
+    if (allUnits.includes(inputText)) {
       onChange(inputText);
     } else {
       setInputText(value);
