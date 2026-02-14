@@ -68,7 +68,7 @@ export default function InventoryItem({
   return (
     <div
       onClick={() => onClick(item)}
-      className={`${getBgColor()} border-b border-gray-100 py-4 px-4 hover:bg-gray-50/50 transition-colors cursor-pointer`}
+      className={`${getBgColor()} glass rounded-3xl border border-white/40 p-5 pop-shadow hover:translate-y-[-2px] transition-all duration-300 cursor-pointer active:scale-[0.98]`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export default function InventoryItem({
               // expireDate が設定されていれば、カテゴリに応じてラベルを切り替え
               if (item.expireDate) {
                 const detectedType = getExpiryType(item.name);
-                const label = detectedType
+                const label = detectedType && detectedType in EXPIRY_TYPE_SHORT_LABELS
                   ? EXPIRY_TYPE_SHORT_LABELS[detectedType]
                   : EXPIRY_TYPE_SHORT_LABELS['best_before'];
                 const suffix = detectedType === 'freshness' ? '頃' : '';

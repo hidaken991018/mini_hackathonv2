@@ -54,7 +54,7 @@ const FOOD_CATEGORIES: FoodCategory[] = [
     defaultConsumeDays: 5,
   },
   {
-    name: '実もの野菜',
+    name: '果菜',
     keywords: ['トマト', 'ミニトマト', 'きゅうり', 'キュウリ', 'なす', 'ナス', 'ピーマン', 'パプリカ', 'ズッキーニ', 'オクラ', 'おくら', 'とうもろこし', 'コーン', '枝豆', 'えだまめ', 'さやいんげん', 'インゲン', 'いんげん', 'ゴーヤ', 'ゴーヤー', 'そら豆', 'スナップエンドウ'],
     expiryType: 'freshness',
     defaultExpireDays: 5,
@@ -170,6 +170,25 @@ export function getExpiryType(foodName: string): ExpiryType | null {
   const category = findCategory(foodName);
   return category?.expiryType ?? null;
 }
+
+/**
+ * 食材名からカテゴリ名を取得する（フィルタリング用）
+ *
+ * @param foodName 食材名
+ * @returns カテゴリ名、またはカテゴリ不明の場合 'その他'
+ */
+export function getFoodCategoryName(foodName: string): string {
+  const category = findCategory(foodName);
+  return category?.name ?? 'その他';
+}
+
+/**
+ * 全食材カテゴリ名の一覧（フィルタUI用）
+ */
+export const FOOD_CATEGORY_NAMES: string[] = [
+  ...FOOD_CATEGORIES.map((c) => c.name),
+  'その他',
+];
 
 /**
  * 食材名からデフォルトの期限日を推定する

@@ -4,7 +4,21 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { createValidationErrorResponse } from '@/lib/validation/error-response';
 import { inventoryBulkRequestSchema } from '@/lib/validation/schemas';
 
-export const dynamic = 'force-dynamic'
+import { getFoodCategoryName } from '@/lib/expiry-defaults';
+
+export const dynamic = 'force-dynamic';
+
+type InventoryItemInput = {
+  name: string;
+  category?: string;
+  quantityValue?: number;
+  quantityUnit?: string;
+  expireDate?: string;
+  consumeBy?: string;
+  purchaseDate?: string;
+  note?: string;
+  isStaple?: boolean;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,16 +44,19 @@ export async function POST(request: NextRequest) {
           data: {
             userId,
             name: item.name,
+            category: item.category || getFoodCategoryName(item.name),
             quantityValue: item.quantityValue,
             quantityUnit: item.quantityUnit ?? null,
             expireDate: item.expireDate ? new Date(item.expireDate) : null,
             consumeBy: item.consumeBy ? new Date(item.consumeBy) : null,
-            purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : null,
+            purchaseDate: item.purchaseDate
+              ? new Date(item.purchaseDate)
+              : null,
             note: item.note ?? null,
             isStaple: item.isStaple ?? false,
           },
-        })
-      )
+        }),
+      ),
     );
 
     return NextResponse.json({
@@ -56,9 +73,11 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: '在庫の一括登録中にエラーが発生しました',
-        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : '不明なエラー',
+        }),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

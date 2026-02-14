@@ -37,6 +37,7 @@ export type Notification = {
 // 在庫アイテムの型（登録前）
 export type InventoryItem = {
   name: string;
+  category?: string;
   quantityValue?: number;
   quantityUnit?: string;
   expireDate?: string;
@@ -50,6 +51,7 @@ export type InventoryItem = {
 export type InventoryItemWithId = {
   id: string;
   name: string;
+  category?: string;
   quantityValue?: number;
   quantityUnit?: string;
   expireDate?: string;
@@ -106,6 +108,9 @@ export type RecipeInput = {
   steps: RecipeStep[];
 };
 
+// レシピ在庫マッチ度ラベル
+export type RecipeMatchLabel = 'perfect' | 'partial' | 'low';
+
 // レシピ一覧アイテム（軽量版）
 export type RecipeListItem = {
   id: string;
@@ -117,4 +122,7 @@ export type RecipeListItem = {
   ingredientCount: number;
   stepCount: number;
   createdAt: string;
+  updatedAt: string;
+  matchScore?: number;
+  matchLabel?: RecipeMatchLabel;
 };

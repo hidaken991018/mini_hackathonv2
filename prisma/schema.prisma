@@ -32,6 +32,7 @@ model Inventory {
   id            String    @id @default(uuid())
   userId        String    @map("user_id")
   name          String
+  category      String?
   quantityValue Float?    @map("quantity_value")
   quantityUnit  String?   @map("quantity_unit")
   note          String?

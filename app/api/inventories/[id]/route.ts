@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 // GET - 在庫詳細取得
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { error, userId } = await requireAuth(request);
@@ -21,7 +21,7 @@ export async function GET(
     if (!inventory) {
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -29,7 +29,7 @@ export async function GET(
     if (inventory.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'この在庫にアクセスする権限がありません' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -38,11 +38,13 @@ export async function GET(
       data: {
         id: inventory.id,
         name: inventory.name,
+        category: inventory.category,
         quantityValue: inventory.quantityValue,
         quantityUnit: inventory.quantityUnit,
         expireDate: inventory.expireDate?.toISOString().split('T')[0] ?? null,
         consumeBy: inventory.consumeBy?.toISOString().split('T')[0] ?? null,
-        purchaseDate: inventory.purchaseDate?.toISOString().split('T')[0] ?? null,
+        purchaseDate:
+          inventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: inventory.note,
         imageUrl: inventory.imageUrl,
         isStaple: inventory.isStaple,
@@ -56,9 +58,11 @@ export async function GET(
       {
         success: false,
         error: '在庫の取得中にエラーが発生しました',
-        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : '不明なエラー',
+        }),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -66,7 +70,7 @@ export async function GET(
 // PUT - 在庫更新
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { error, userId } = await requireAuth(request);
@@ -89,7 +93,7 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -97,14 +101,18 @@ export async function PUT(
     if (existing.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'この在庫を編集する権限がありません' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const updateData = {
       ...(body.name !== undefined && { name: body.name }),
-      ...(body.quantityValue !== undefined && { quantityValue: body.quantityValue }),
-      ...(body.quantityUnit !== undefined && { quantityUnit: body.quantityUnit }),
+      ...(body.quantityValue !== undefined && {
+        quantityValue: body.quantityValue,
+      }),
+      ...(body.quantityUnit !== undefined && {
+        quantityUnit: body.quantityUnit,
+      }),
       ...(body.expireDate !== undefined && {
         expireDate: body.expireDate ? new Date(body.expireDate) : null,
       }),
@@ -128,11 +136,15 @@ export async function PUT(
       data: {
         id: updatedInventory.id,
         name: updatedInventory.name,
+        category: updatedInventory.category,
         quantityValue: updatedInventory.quantityValue,
         quantityUnit: updatedInventory.quantityUnit,
-        expireDate: updatedInventory.expireDate?.toISOString().split('T')[0] ?? null,
-        consumeBy: updatedInventory.consumeBy?.toISOString().split('T')[0] ?? null,
-        purchaseDate: updatedInventory.purchaseDate?.toISOString().split('T')[0] ?? null,
+        expireDate:
+          updatedInventory.expireDate?.toISOString().split('T')[0] ?? null,
+        consumeBy:
+          updatedInventory.consumeBy?.toISOString().split('T')[0] ?? null,
+        purchaseDate:
+          updatedInventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: updatedInventory.note,
         imageUrl: updatedInventory.imageUrl,
         isStaple: updatedInventory.isStaple,
@@ -146,9 +158,11 @@ export async function PUT(
       {
         success: false,
         error: '在庫の更新中にエラーが発生しました',
-        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : '不明なエラー',
+        }),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -156,7 +170,7 @@ export async function PUT(
 // DELETE - 在庫削除
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { error, userId } = await requireAuth(request);
@@ -169,7 +183,7 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json(
         { success: false, error: '在庫が見つかりません' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -177,7 +191,7 @@ export async function DELETE(
     if (existing.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'この在庫を削除する権限がありません' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -190,9 +204,11 @@ export async function DELETE(
       {
         success: false,
         error: '在庫の削除中にエラーが発生しました',
-        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : '不明なエラー',
+        }),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
