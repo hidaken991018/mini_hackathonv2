@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import IngredientInput, { IngredientFormItem } from './IngredientInput';
 import StepInput, { StepFormItem } from './StepInput';
 import { Recipe, RecipeInput } from '@/types';
+import Portal from './Portal';
 
 type RecipeCreateModalProps = {
   isOpen: boolean;
@@ -153,124 +154,126 @@ export default function RecipeCreateModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* オーバーレイ */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+    <Portal>
+      <div className="fixed inset-0 z-[100] flex items-end justify-center">
+        {/* オーバーレイ */}
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={onClose}
+        />
 
-      {/* モーダル本体 */}
-      <div className="relative w-full max-h-[90vh] bg-white rounded-t-3xl animate-slide-up overflow-hidden">
-        {/* ヘッダー */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {mode === 'edit' ? 'レシピを編集' : '新しいレシピ'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* フォーム */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="px-6 py-4 space-y-6">
-            {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
-                {error}
-              </div>
-            )}
-
-            {/* タイトル */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                レシピ名 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="例: 鶏肉のトマト煮込み"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
-              />
-            </div>
-
-            {/* 説明 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                説明
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="レシピの説明やポイントなど"
-                rows={2}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
-              />
-            </div>
-
-            {/* 調理時間・人数 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  調理時間
-                </label>
-                <input
-                  type="text"
-                  value={cookingTime}
-                  onChange={(e) => setCookingTime(e.target.value)}
-                  placeholder="例: 30分"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  人数
-                </label>
-                <input
-                  type="text"
-                  value={servings}
-                  onChange={(e) => setServings(e.target.value)}
-                  placeholder="例: 2人分"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              </div>
-            </div>
-
-            {/* 材料 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                材料 <span className="text-red-500">*</span>
-              </label>
-              <IngredientInput ingredients={ingredients} onChange={setIngredients} />
-            </div>
-
-            {/* 手順 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                作り方 <span className="text-red-500">*</span>
-              </label>
-              <StepInput steps={steps} onChange={setSteps} />
-            </div>
-          </div>
-
-          {/* フッター */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4">
+        {/* モーダル本体 */}
+        <div className="relative w-full max-h-[90vh] bg-white rounded-t-3xl animate-slide-up overflow-hidden max-w-md mx-auto">
+          {/* ヘッダー */}
+          <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {mode === 'edit' ? 'レシピを編集' : '新しいレシピ'}
+            </h2>
             <button
-              type="submit"
-              disabled={!isValid() || isSubmitting}
-              className="w-full py-3 bg-gray-900 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600"
             >
-              {isSubmitting ? '保存中...' : mode === 'edit' ? '更新する' : '保存する'}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </form>
+
+          {/* フォーム */}
+          <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="px-6 py-4 space-y-6">
+              {error && (
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {/* タイトル */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  レシピ名 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="例: 鶏肉のトマト煮込み"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+              </div>
+
+              {/* 説明 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  説明
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="レシピの説明やポイントなど"
+                  rows={2}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+                />
+              </div>
+
+              {/* 調理時間・人数 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    調理時間
+                  </label>
+                  <input
+                    type="text"
+                    value={cookingTime}
+                    onChange={(e) => setCookingTime(e.target.value)}
+                    placeholder="例: 30分"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    人数
+                  </label>
+                  <input
+                    type="text"
+                    value={servings}
+                    onChange={(e) => setServings(e.target.value)}
+                    placeholder="例: 2人分"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+
+              {/* 材料 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  材料 <span className="text-red-500">*</span>
+                </label>
+                <IngredientInput ingredients={ingredients} onChange={setIngredients} />
+              </div>
+
+              {/* 手順 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  作り方 <span className="text-red-500">*</span>
+                </label>
+                <StepInput steps={steps} onChange={setSteps} />
+              </div>
+            </div>
+
+            {/* フッター */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4">
+              <button
+                type="submit"
+                disabled={!isValid() || isSubmitting}
+                className="w-full py-3 bg-gray-900 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? '保存中...' : mode === 'edit' ? '更新する' : '保存する'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

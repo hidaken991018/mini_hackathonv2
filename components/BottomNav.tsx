@@ -18,12 +18,13 @@ export default function BottomNav() {
   const activeTab = getActiveTab();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-lg">
-      <div className="flex justify-around items-center h-16">
+    <nav className="absolute bottom-6 left-4 right-4 glass rounded-full border border-white/40 shadow-2xl z-40 md:hidden">
+
+      <div className="flex justify-around items-center h-20">
         <Link
           href="/notifications"
-          className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
-            activeTab === 'notifications' ? 'text-gray-900' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center gap-1.5 px-4 py-2 transition-all ${
+            activeTab === 'notifications' ? 'text-rose-500 scale-110' : 'text-slate-400 opacity-60'
           }`}
         >
           <svg
@@ -44,8 +45,8 @@ export default function BottomNav() {
 
         <Link
           href="/inventory"
-          className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
-            activeTab === 'inventory' ? 'text-gray-900' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center gap-1.5 px-4 py-2 transition-all ${
+            activeTab === 'inventory' ? 'text-rose-500 scale-110' : 'text-slate-400 opacity-60'
           }`}
         >
           <svg
@@ -66,8 +67,8 @@ export default function BottomNav() {
 
         <Link
           href="/recipes"
-          className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
-            activeTab === 'recipes' ? 'text-gray-900' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center gap-1.5 px-4 py-2 transition-all ${
+            activeTab === 'recipes' ? 'text-rose-500 scale-110' : 'text-slate-400 opacity-60'
           }`}
         >
           <svg
