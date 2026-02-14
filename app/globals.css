@@ -3,11 +3,47 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary: 244 63 94; /* rose-500 */
+    --primary-foreground: 255 255 255;
+    
+    --background: 249 250 251; /* gray-50 */
+    --foreground: 15 23 42; /* slate-900 */
+    
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    
+    --border: 241 245 249; /* slate-100 */
+    --input: 226 232 240; /* slate-200 */
+    --ring: 244 63 94;
+    
+    --radius: 1.5rem;
+  }
+
   body {
-    @apply bg-gray-50;
+    @apply bg-slate-50 text-slate-900;
     font-family: var(--font-sans);
   }
 }
+
+.glass {
+  @apply backdrop-blur-md bg-white/70 border border-white/40 shadow-sm;
+}
+
+.glass-dark {
+  @apply backdrop-blur-md bg-slate-900/10 border border-white/20 shadow-sm;
+}
+
+.pop-shadow {
+  @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+}
+
+.main-container {
+  @apply mx-auto w-full max-w-md md:max-w-6xl min-h-screen relative overflow-hidden flex flex-col md:flex-row;
+}
+
+
+
 
 @keyframes slide-up {
   from {

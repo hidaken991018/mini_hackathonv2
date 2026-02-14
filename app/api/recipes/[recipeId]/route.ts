@@ -71,7 +71,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの取得中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -102,14 +102,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { success: false, error: 'アクセス権限がありません' },
         { status: 403 }
-      );
-    }
-
-    // AI生成レシピは編集不可
-    if (existingRecipe.sourceType === 'ai_generated') {
-      return NextResponse.json(
-        { success: false, error: 'AI生成レシピは編集できません' },
-        { status: 400 }
       );
     }
 
@@ -241,7 +233,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの更新中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );
@@ -275,14 +267,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // AI生成レシピは削除不可
-    if (existingRecipe.sourceType === 'ai_generated') {
-      return NextResponse.json(
-        { success: false, error: 'AI生成レシピは削除できません' },
-        { status: 400 }
-      );
-    }
-
     // レシピを削除（Cascade削除で材料・手順も削除される）
     await prisma.recipe.delete({
       where: { id: recipeId },
@@ -298,7 +282,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       {
         success: false,
         error: 'レシピの削除中にエラーが発生しました',
-        details: error instanceof Error ? error.message : '不明なエラー',
+        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : '不明なエラー' }),
       },
       { status: 500 }
     );

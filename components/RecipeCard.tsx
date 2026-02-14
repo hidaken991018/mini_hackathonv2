@@ -1,23 +1,35 @@
 'use client';
 
-import { RecipeListItem } from '@/types';
+import { RecipeListItem, RecipeMatchLabel } from '@/types';
 
 type RecipeCardProps = {
   recipe: RecipeListItem;
   onClick: () => void;
 };
 
+const matchBadgeConfig: Record<RecipeMatchLabel, { label: string; className: string }> = {
+  perfect: { label: '在庫で作れる', className: 'bg-emerald-100 text-emerald-700' },
+  partial: { label: '一部買い足し', className: 'bg-amber-100 text-amber-700' },
+  low: { label: '材料が不足', className: 'bg-gray-100 text-gray-500' },
+};
+
 export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
-  const formatDate = (dateString: string) => {
+  const formatUpdatedDate = (dateString: string) => {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '更新: -';
+
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diff = startOfToday.getTime() - startOfDate.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) return '今日';
-    if (days === 1) return '昨日';
-    if (days < 7) return `${days}日前`;
-    return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+    const relative = days <= 0 ? '今日' : days === 1 ? '昨日' : `${days}日前`;
+    const absolute = date.toLocaleDateString('ja-JP', now.getFullYear() === date.getFullYear()
+      ? { month: 'numeric', day: 'numeric' }
+      : { year: 'numeric', month: 'numeric', day: 'numeric' });
+
+    return `更新: ${relative}（${absolute}）`;
   };
 
   return (
@@ -26,7 +38,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
       className="w-full text-left bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow"
     >
       {/* ヘッダー: バッジとタイトル */}
-      <div className="flex items-start gap-3 mb-2">
+      <div className="flex items-start gap-2 mb-2 flex-wrap">
         <span
           className={`flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full ${
             recipe.sourceType === 'ai_generated'
@@ -36,7 +48,14 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
         >
           {recipe.sourceType === 'ai_generated' ? 'AI生成' : '手入力'}
         </span>
-        <h3 className="font-medium text-gray-900 line-clamp-1">{recipe.title}</h3>
+        {recipe.matchLabel && (
+          <span
+            className={`flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full ${matchBadgeConfig[recipe.matchLabel].className}`}
+          >
+            {matchBadgeConfig[recipe.matchLabel].label}
+          </span>
+        )}
+        <h3 className="font-medium text-gray-900 line-clamp-1 w-full">{recipe.title}</h3>
       </div>
 
       {/* メタ情報 */}
@@ -55,7 +74,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           </svg>
           {recipe.ingredientCount}材料
         </span>
-        <span className="ml-auto">{formatDate(recipe.createdAt)}</span>
+        <span className="ml-auto">{formatUpdatedDate(recipe.updatedAt)}</span>
       </div>
 
       {/* 説明文 */}

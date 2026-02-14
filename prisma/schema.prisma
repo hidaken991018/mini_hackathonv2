@@ -32,12 +32,15 @@ model Inventory {
   id            String    @id @default(uuid())
   userId        String    @map("user_id")
   name          String
+  category      String?
   quantityValue Float?    @map("quantity_value")
   quantityUnit  String?   @map("quantity_unit")
   note          String?
   imageUrl      String?   @map("image_url")
   expireDate    DateTime? @map("expire_date")
   consumeBy     DateTime? @map("consume_by")
+  purchaseDate  DateTime? @map("purchase_date")
+  isStaple      Boolean   @default(false) @map("is_staple")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
