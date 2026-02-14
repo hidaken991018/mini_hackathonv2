@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.claude
+*.md
+__tests__
+coverage
+.env*
+.vscode
+cloud/.terraform
+cloud/.terraform.lock.hcl
+cloud/terraform.tfvars
+docker-compose.yml
+nul

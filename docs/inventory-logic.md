@@ -12,22 +12,29 @@ API仕様・UI仕様の詳細は [inventory-spec.md](./inventory-spec.md) を参
 
 ```mermaid
 flowchart TD
-    A[レシート画像] --> B[Gemini AI 解析]
-    B --> C[後処理: 常備品判定 + 期限自動設定]
-    C --> D[プレビュー画面で確認・編集]
-    D --> E[一括登録 POST /api/inventories/bulk]
-    E --> F[在庫として保存]
+    A[通知画面の+ボタン] --> B[入力アクションシート]
+    B --> C{入力方法}
+    C -->|レシート読取| D[レシート画像]
+    C -->|カメラ撮影| D
+    C -->|手動追加| E[手動入力フォーム]
+    D --> F[Gemini AI 解析]
+    F --> G[後処理: 常備品判定 + 期限自動設定]
+    G --> H[プレビュー画面で確認・編集]
+    H --> I[一括登録 POST /api/inventories/bulk]
+    F -->|抽出0件/失敗| E
+    E --> I
+    I --> J[在庫として保存]
 
-    F --> G{消費方法}
-    G -->|クイック消費| H[PATCH /api/inventories/id/consume]
-    G -->|調理で消費| I[POST /api/recipes/recipeId/cook]
-    G -->|手動編集| J[PUT /api/inventories/id]
-    G -->|手動削除| K[DELETE /api/inventories/id]
+    J --> K{消費方法}
+    K -->|クイック消費| L[PATCH /api/inventories/id/consume]
+    K -->|調理で消費| M[POST /api/recipes/recipeId/cook]
+    K -->|手動編集| N[PUT /api/inventories/id]
+    K -->|手動削除| O[DELETE /api/inventories/id]
 
-    H --> L{残量チェック}
-    I --> L
-    L -->|残量 > 0| M[数量を更新]
-    L -->|残量 <= 0| N[在庫を自動削除]
+    L --> P{残量チェック}
+    M --> P
+    P -->|残量 > 0| Q[数量を更新]
+    P -->|残量 <= 0| R[在庫を自動削除]
 ```
 
 ### 関連ファイル一覧
@@ -43,6 +50,8 @@ flowchart TD
 | 常備品判定 | `lib/food-category.ts` | 食材名→常備品フラグ判定 |
 | 期限推定 | `lib/expiry-defaults.ts` | 食材名→期限タイプ判定・デフォルト期限設定 |
 | 期限入力UI | `components/ExpiryDateInput.tsx` | 期限タイプ切り替えトグル + 日付入力 |
+| 入力ランチャーUI | `components/ReceiptUploadPanel.tsx` | 通知画面の「+」→アクションシート（手入力/レシート/カメラ）、OCR失敗時フォールバック |
+| 手動追加UI | `components/InventoryManualAddModal.tsx` | 在庫を1件ずつ手動登録 |
 | 単位ロジック | `lib/units/constants.ts` | 単位定義・消費量・換算係数 |
 | 単位ロジック | `lib/units/comparator.ts` | 数量比較・残量計算・消費情報 |
 | 単位ロジック | `lib/units/converter.ts` | 単位間の変換処理 |
@@ -56,8 +65,13 @@ flowchart TD
 ### 2.1 全体フロー
 
 ```
-レシート画像 → Gemini AI（構造化出力）→ 後処理 → プレビュー → 一括登録
+在庫入力ランチャー
+  ├─ 通知画面の「+」→アクションシート
+  │    ├─ レシート読取/カメラ撮影 → Gemini AI（構造化出力）→ 後処理 → プレビュー → 一括登録
+  │    └─ 手入力で追加 → 一括登録（1件）
 ```
+
+OCRで `items` が空配列だった場合、手動入力フォームへフォールバックして登録を完了できる。
 
 ### 2.2 Gemini 構造化出力スキーマ
 

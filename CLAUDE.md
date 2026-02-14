@@ -40,7 +40,7 @@ npm run db:seed      # シードデータ投入
 - **フレームワーク:** Next.js 14.2.5 (App Router)
 - **言語:** TypeScript (strictモード)
 - **スタイリング:** Tailwind CSS
-- **データベース:** Prisma + SQLite (`prisma/dev.db`)
+- **データベース:** Prisma + PostgreSQL (Docker Compose)
 - **認証:** Firebase Auth (クライアント) + Firebase Admin SDK (サーバー)
 - **AI統合:** Google Generative AI (Gemini 2.0 Flash: テキスト/構造化出力, Gemini 3 Pro Image Preview: 画像生成)
 - **テスト:** Jest + Testing Library (`__tests__/`)
@@ -100,6 +100,9 @@ npm run db:seed      # シードデータ投入
 `.env.example`に全変数のテンプレートあり。`.env.local`に設定:
 
 ```bash
+# Database (PostgreSQL)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mini_hackathon?schema=public"
+
 # Firebase (クライアント側) - 6変数
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
@@ -126,7 +129,7 @@ NOTIFY_SECRET=...
 
 ### 在庫管理 (Firebase認証必須)
 - `GET /api/inventories?userId={id}` - ユーザーの在庫一覧取得
-- `POST /api/inventories/bulk` - 在庫一括登録（`$transaction`使用）
+- `POST /api/inventories/bulk` - 在庫一括登録（`createManyAndReturn`使用）
 - `GET/PUT/DELETE /api/inventories/[id]` - 個別在庫のCRUD
 - `PATCH /api/inventories/[id]/consume` - 数量-1（0で自動削除）
 
@@ -145,7 +148,7 @@ NOTIFY_SECRET=...
 
 ## データベーススキーマ
 
-Prisma + SQLite。詳細は`prisma/schema.prisma`と`DB_要件定義.md`を参照。
+Prisma + PostgreSQL。詳細は`prisma/schema.prisma`と`DB_要件定義.md`を参照。
 
 主要エンティティ: `users`, `inventories`, `notifications`, `recipes`, `recipe_ingredients`, `recipe_steps`
 
@@ -157,8 +160,11 @@ Prisma + SQLite。詳細は`prisma/schema.prisma`と`DB_要件定義.md`を参�
 - **ファジーマッチング**: 正規化（小文字化、トリミング）後に部分文字列マッチングでレシピ材料と在庫を紐付け
 
 ### Prisma使用上の注意
-- **SQLite**: `createMany`は在庫一括登録では非対応のため`$transaction`で代替（通知のexpiry APIでは使用）
 - **接続**: `lib/prisma.ts`でシングルトンパターン
+
+### Docker Compose
+- `docker compose up -d` でPostgreSQLコンテナを起動
+- `docker compose down` で停止（データはボリュームに永続化）
 
 ### GitHub Actions
 - `.github/workflows/expiry-notify.yml` - 賞味期限通知のスケジュール実行

@@ -1,11 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import { ReceiptAnalysisResult, InventoryItem } from '@/types';
-
-// デフォルトユーザーID（認証実装前の暫定対応）
-const DEFAULT_USER_ID = 'mock-user-001';
+import Image from 'next/image';
 
 // ローカル在庫型
 type LocalInventory = {
@@ -67,13 +65,7 @@ export default function CreateNoteButtons({
 
         allImageUrls.push(imageUrl);
 
-        const response = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageData: imageUrl }),
-        });
-
-        const data = await response.json();
+        const { data } = await axiosInstance.post('/api/analyze-receipt', { imageData: imageUrl });
 
         if (data.success) {
           if (data.data.items) {
@@ -116,8 +108,7 @@ export default function CreateNoteButtons({
     setIsRegistering(true);
 
     try {
-      const response = await axios.post('/api/inventories/bulk', {
-        userId: DEFAULT_USER_ID,
+      const response = await axiosInstance.post('/api/inventories/bulk', {
         items: previewItems,
       });
 
@@ -312,12 +303,15 @@ export default function CreateNoteButtons({
               <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
                 <div className={`grid gap-2 ${previewImageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   {previewImageUrls.map((url, index) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt={`レシート ${index + 1}`}
-                      className="w-full max-h-32 object-contain rounded-lg"
-                    />
+                    <div key={index} className="relative w-full h-32">
+                      <Image
+                        src={url}
+                        alt={`レシート ${index + 1}`}
+                        fill
+                        className="object-contain rounded-lg"
+                        unoptimized
+                      />
+                    </div>
                   ))}
                 </div>
               </div>

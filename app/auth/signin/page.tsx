@@ -194,30 +194,30 @@ export default function SignInPage() {
 
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 {mode === "signup" && (
-                  <label className="block text-xs font-semibold text-slate-600">
+                  <label className="block text-xs font-semibold text-slate-700">
                     表示名（任意）
                     <input
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       autoComplete="name"
-                      className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                      className="mt-2 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition-all"
                     />
                   </label>
                 )}
 
-                <label className="block text-xs font-semibold text-slate-600">
+                <label className="block text-xs font-semibold text-slate-700">
                   メールアドレス
                   <input
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
-                    className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    className="mt-2 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition-all"
                   />
                 </label>
 
-                <label className="block text-xs font-semibold text-slate-600">
+                <label className="block text-xs font-semibold text-slate-700">
                   パスワード
                   <input
                     type="password"
@@ -225,7 +225,7 @@ export default function SignInPage() {
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     minLength={6}
-                    className="mt-2 w-full rounded-xl border border-white/70 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    className="mt-2 w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition-all"
                   />
                 </label>
 

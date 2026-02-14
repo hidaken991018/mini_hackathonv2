@@ -39,7 +39,7 @@ export default function InventoryList({
           </div>
           <p className="text-gray-500">在庫がありません</p>
           <p className="text-gray-400 text-sm mt-1">
-            通知画面からレシートを読み取って
+            通知画面の「＋」から
             <br />
             食材を登録してください
           </p>
@@ -49,17 +49,20 @@ export default function InventoryList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      {items.map((item) => (
-        <InventoryItem
-          key={item.id}
-          item={item}
-          onConsume={onConsume}
-          onDelete={onDelete}
-          onClick={onItemClick}
-          isConsuming={consumingId === item.id}
-        />
-      ))}
+    <div className="flex-1 overflow-y-auto p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item) => (
+          <InventoryItem
+            key={item.id}
+            item={item}
+            onConsume={onConsume}
+            onDelete={onDelete}
+            onClick={onItemClick}
+            isConsuming={consumingId === item.id}
+          />
+        ))}
+      </div>
     </div>
   );
+
 }
