@@ -82,6 +82,7 @@ export default function RecipeSlideModal({
 
         setShowCookConfirm(false);
         alert('調理を完了しました！在庫が更新されました。');
+        onClose();
       } else {
         alert(`調理処理に失敗しました: ${response.data.error || '不明なエラー'}`);
       }
@@ -160,12 +161,12 @@ export default function RecipeSlideModal({
                   {/* レシピ情報 */}
                   <div className="mb-6">
                     {activeRecipe.imageUrl && (
-                      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 relative h-64">
+                      <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 relative w-full aspect-[4/3] max-h-[40vh] bg-gray-50">
                         <Image
                           src={activeRecipe.imageUrl}
-                          alt="Recipe Media"
+                          alt={'title' in activeRecipe ? activeRecipe.title : 'Recipe Media'}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                           unoptimized
                         />
                       </div>
@@ -304,8 +305,8 @@ export default function RecipeSlideModal({
                     )}
                   </div>
 
-                  {/* 管理アクション（編集・削除） */}
-                  {recipe?.sourceType === 'user_created' && (onEdit || onDelete) && (
+                  {/* 管理アクション（編集・削除）- 全レシピで表示 */}
+                  {recipe && (onEdit || onDelete) && (
                     <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
                       {onDelete && (
                          <button
