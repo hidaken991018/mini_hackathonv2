@@ -54,9 +54,9 @@ $inventoryBody = @{
 $inventoryResult = Invoke-Api -Method Post -Url "$BaseUrl/api/inventories/bulk" -Body $inventoryBody
 Write-Host "在庫登録: success=$($inventoryResult.success) createdCount=$($inventoryResult.data.createdCount)"
 
-Write-Host "2) 通知作成 (レシピ通知)" -ForegroundColor Cyan
+Write-Host "2) AIレシピ生成" -ForegroundColor Cyan
 $notifyResult = Invoke-Api -Method Post -Url "$BaseUrl/api/recipe/notify" -Body "{}"
-Write-Host "通知作成: success=$($notifyResult.success) notificationId=$($notifyResult.data.notificationId)"
+Write-Host "レシピ生成: success=$($notifyResult.success) recipeId=$($notifyResult.data.recipeId)"
 
 Write-Host "3) 通知一覧取得" -ForegroundColor Cyan
 $notifications = Invoke-Api -Method Get -Url "$BaseUrl/api/notifications"

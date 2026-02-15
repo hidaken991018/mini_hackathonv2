@@ -40,8 +40,8 @@ async function main() {
   }
   console.log('Inventory added:', ingredients.map(i => i.name).join(', '));
 
-  // 4. Call API
-  console.log('Calling Notification API...');
+  // 4. Call API（手動AIレシピ生成は通知を作成せず、レシピのみ作成）
+  console.log('Calling Recipe Notify API...');
   try {
     const res = await axios.post('http://localhost:3000/api/recipe/notify', {
       userId: USER_ID,
@@ -50,37 +50,22 @@ async function main() {
     console.log('API Response Status:', res.status);
     if (res.data.success) {
       const data = res.data.data;
-      console.log('Notification ID:', data.notificationId);
+      console.log('Recipe ID:', data.recipeId);
       console.log('Recipe Title:', data.title);
-      console.log('Generated Dish Image URL (Notification):', data.imageUrl || 'No image URL returned');
 
-      // Check DB for image
+      // Check DB for recipe image
       const recipe = await prisma.recipe.findUnique({
         where: { id: data.recipeId },
       });
       console.log('Recipe in DB Infographic URL:', recipe?.imageUrl);
-      
-      const notification = await prisma.notification.findUnique({
-          where: { id: data.notificationId }
-      });
-      console.log('Notification in DB Dish URL:', notification?.imageUrl);
 
       if (recipe?.imageUrl) {
-         const localPath = path.join(process.cwd(), 'public', recipe.imageUrl);
-         const exists = fs.existsSync(localPath);
-         console.log(`Infographic File Exists at ${localPath}?`, exists);
-      } else {
-          console.warn('WARNING: No Infographic URL generated.');
-      }
-
-      if (notification?.imageUrl) {
-        const localPath = path.join(process.cwd(), 'public', notification.imageUrl);
+        const localPath = path.join(process.cwd(), 'public', recipe.imageUrl);
         const exists = fs.existsSync(localPath);
-        console.log(`Dish Image File Exists at ${localPath}?`, exists);
-     } else {
-         console.warn('WARNING: No Dish Image URL generated.');
-     }
-
+        console.log(`Infographic File Exists at ${localPath}?`, exists);
+      } else {
+        console.warn('WARNING: No Infographic URL generated.');
+      }
     } else {
       console.error('API Failed:', res.data);
     }

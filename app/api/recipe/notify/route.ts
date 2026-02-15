@@ -304,18 +304,6 @@ ${inventoryList}
       ),
     );
 
-    const matchText =
-      matchedInventoryNames.length > 0
-        ? matchedInventoryNames.join('・')
-        : '在庫の食材';
-
-    const title = `今日のおすすめレシピ: ${recipeTitle}`;
-    const body = canMakeWithInventory
-      ? `在庫の「${matchText}」を使って「${recipeTitle}」を作りませんか？`
-      : `在庫の「${matchText}」で作れるレシピです。足りない材料: ${finalMissing.join(
-          '・',
-        )}`;
-
     const recipe = await prisma.recipe.create({
       data: {
         userId: userId!,
@@ -413,21 +401,10 @@ ${inventoryList}
         });
     }
 
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        type: 'recipe',
-        title,
-        body,
-        recipeId: recipe.id,
-        imageUrl: generatedDishUrl, // 通知カードには完成イメージ
-      },
-    });
-
+    // 通知は作成しない（通知はバッチ処理で送る想定。手動AI生成はレシピ一覧にのみ反映）
     return NextResponse.json({
       success: true,
       data: {
-        notificationId: notification.id,
         recipeId: recipe.id,
         title: recipeTitle,
         canMakeWithInventory,
