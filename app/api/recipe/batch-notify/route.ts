@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
           userId: uid,
           status: 'success',
           recipeId: result.recipeId,
-          notificationId: result.notificationId,
+          notificationId: result.notificationId ?? '',
         });
         successCount++;
       } catch (error) {

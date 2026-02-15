@@ -25,11 +25,13 @@ export type RecipeGenerationInput = {
   servings?: number;
   /** Ingredient names to exclude (allergies, preferences). */
   excludeIngredients?: string[];
+  /** When true, skip notification creation (e.g. manual AI generation from recipes page). */
+  skipNotification?: boolean;
 };
 
 /** Successful result returned by `generateRecipeForUser`. */
 export type RecipeGenerationResult = {
-  notificationId: string;
+  notificationId?: string;
   recipeId: string;
   title: string;
   canMakeWithInventory: boolean;
@@ -459,20 +461,24 @@ ${inventoryList}
     });
   }
 
-  // ------ 6. Create notification ------
-  const notification = await prisma.notification.create({
-    data: {
-      userId,
-      type: 'recipe',
-      title,
-      body,
-      recipeId: recipe.id,
-      imageUrl: generatedDishUrl, // Notification card shows dish image
-    },
-  });
+  // ------ 6. Create notification (skip for manual AI generation) ------
+  let notificationId: string | undefined;
+  if (!input.skipNotification) {
+    const notification = await prisma.notification.create({
+      data: {
+        userId,
+        type: 'recipe',
+        title,
+        body,
+        recipeId: recipe.id,
+        imageUrl: generatedDishUrl, // Notification card shows dish image
+      },
+    });
+    notificationId = notification.id;
+  }
 
   return {
-    notificationId: notification.id,
+    notificationId,
     recipeId: recipe.id,
     title: recipeTitle,
     canMakeWithInventory,

@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       userId: userId!,
       servings,
       excludeIngredients,
+      skipNotification: true,
     });
 
     return NextResponse.json({ success: true, data: result });
