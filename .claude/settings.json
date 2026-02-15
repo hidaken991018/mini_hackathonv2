@@ -6,6 +6,12 @@
   },
   "permissions": {
     "allow": [
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
       "Bash(docker compose:*)",
       "Bash(docker exec:*)",
       "Bash(git add:*)",
@@ -14,7 +20,8 @@
       "Bash(gh run list:*)",
       "Bash(gh pr checks:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "WebSearch"
     ]
   }
 }
