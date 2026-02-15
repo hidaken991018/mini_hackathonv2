@@ -15,8 +15,14 @@ env:
   INSTANCE_CONN: syufy-485423:asia-northeast1:mini-hackathon-db
 
 jobs:
+  terraform:
+    name: Terraform Apply
+    uses: ./.github/workflows/terraform-apply.yml
+    secrets: inherit
+
   deploy:
     name: Deploy to Cloud Run
+    needs: terraform
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
