@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
+import { toFullImageUrl } from '@/lib/image-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
       consumeBy: inv.consumeBy?.toISOString().split('T')[0] ?? null,
       purchaseDate: inv.purchaseDate?.toISOString().split('T')[0] ?? null,
       note: inv.note,
-      imageUrl: inv.imageUrl,
+      imageUrl: toFullImageUrl(inv.imageUrl),
       isStaple: inv.isStaple,
       createdAt: inv.createdAt.toISOString(),
       updatedAt: inv.updatedAt.toISOString(),

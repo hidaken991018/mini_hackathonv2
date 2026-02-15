@@ -1,0 +1,58 @@
+name: Terraform Apply
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-apply-production
+  cancel-in-progress: false
+
+env:
+  TF_WORKING_DIR: cloud
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        run: terraform plan -no-color -input=false -out=tfplan
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_firebase_client_email: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          TF_VAR_firebase_private_key: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          TF_VAR_firebase_api_key: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          TF_VAR_firebase_auth_domain: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          TF_VAR_firebase_project_id: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          TF_VAR_firebase_storage_bucket: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          TF_VAR_firebase_messaging_sender_id: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          TF_VAR_firebase_app_id: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          TF_VAR_gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          TF_VAR_notify_secret: ${{ secrets.NOTIFY_SECRET }}
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan

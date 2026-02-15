@@ -237,39 +237,39 @@ describe('レシピAPI ユーティリティ関数', () => {
 
   describe('権限チェック', () => {
     it('自分のレシピのみ編集可能', () => {
-      const recipeUserId = 'user-1';
-      const requestUserId = 'user-1';
+      const recipeUserId: string = 'user-1';
+      const requestUserId: string = 'user-1';
       const canEdit = recipeUserId === requestUserId;
       expect(canEdit).toBe(true);
     });
 
     it('他人のレシピは編集不可', () => {
-      const recipeUserId = 'user-1';
-      const requestUserId = 'user-2';
+      const recipeUserId: string = 'user-1';
+      const requestUserId: string = 'user-2';
       const canEdit = recipeUserId === requestUserId;
       expect(canEdit).toBe(false);
     });
 
     it('AI生成レシピは編集可能', () => {
-      const sourceType = 'ai_generated';
+      const sourceType: 'ai_generated' | 'user_created' = 'ai_generated';
       const canEdit = sourceType === 'ai_generated' || sourceType === 'user_created';
       expect(canEdit).toBe(true);
     });
 
     it('手入力レシピは編集可能', () => {
-      const sourceType = 'user_created';
+      const sourceType = 'user_created' as 'ai_generated' | 'user_created';
       const canEdit = sourceType !== 'ai_generated';
       expect(canEdit).toBe(true);
     });
 
     it('AI生成レシピは削除可能', () => {
-      const sourceType = 'ai_generated';
+      const sourceType: 'ai_generated' | 'user_created' = 'ai_generated';
       const canDelete = sourceType === 'ai_generated' || sourceType === 'user_created';
       expect(canDelete).toBe(true);
     });
 
     it('手入力レシピは削除可能', () => {
-      const sourceType = 'user_created';
+      const sourceType = 'user_created' as 'ai_generated' | 'user_created';
       const canDelete = sourceType === 'ai_generated' || sourceType === 'user_created';
       expect(canDelete).toBe(true);
     });

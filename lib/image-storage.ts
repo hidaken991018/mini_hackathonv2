@@ -1,37 +1,75 @@
-import fs from 'fs';
-import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME;
+const IMAGE_BASE_URL = process.env.IMAGE_BASE_URL;
+
 /**
- * Saves a base64 encoded image to the public directory.
- * @param base64Data The base64 encoded image data (with or without prefix).
- * @param subDir The subdirectory within 'public/images' to save to. Defaults to 'generated'.
- * @returns The public URL path of the saved image (e.g., '/images/generated/abc.png').
+ * 画像を保存し、パス部分のみ返却する。
+ * GCS_BUCKET_NAME が設定されていれば GCS、なければローカルに保存。
+ * @returns パス文字列 (例: "images/dishes/abc.png")
  */
 export async function saveBase64Image(
   base64Data: string,
   subDir: string = 'generated'
 ): Promise<string> {
-  // Remove data URL prefix if present
   const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64Image, 'base64');
-
-  // Define properties
   const fileName = `${uuidv4()}.png`;
-  const relativeDir = path.join('images', subDir);
-  const publicDir = path.join(process.cwd(), 'public');
-  const targetDir = path.join(publicDir, relativeDir);
-  const filePath = path.join(targetDir, fileName);
+  const objectPath = `images/${subDir}/${fileName}`;
 
-  // Ensure directory exists
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+  if (GCS_BUCKET_NAME) {
+    await uploadToGCS(buffer, objectPath);
+  } else {
+    await saveToLocal(buffer, subDir, fileName);
   }
 
-  // Write file
-  await fs.promises.writeFile(filePath, buffer);
+  return objectPath;
+}
 
-  // Return relative URL for frontend use (replace backslashes for Windows)
-  const urlPath = path.join('/', relativeDir, fileName).split(path.sep).join('/');
-  return urlPath;
+/**
+ * DB格納のパスからフルURLを構築する。
+ * IMAGE_BASE_URL が設定されていれば GCS URL、なければローカルの相対パス。
+ * 旧データ ("/images/...") も新データ ("images/...") も両方対応。
+ */
+export function toFullImageUrl(path: string | null | undefined): string | undefined {
+  if (!path) return undefined;
+  // 先頭の / を正規化して除去
+  const normalized = path.startsWith('/') ? path.slice(1) : path;
+  if (IMAGE_BASE_URL) {
+    const baseUrl = IMAGE_BASE_URL.replace(/\/+$/, '');
+    return `${baseUrl}/${normalized}`;
+  }
+  // ローカル: public/ からの相対パス
+  return `/${normalized}`;
+}
+
+async function uploadToGCS(buffer: Buffer, objectPath: string): Promise<void> {
+  try {
+    const { Storage } = await import('@google-cloud/storage');
+    const storage = new Storage();
+    const file = storage.bucket(GCS_BUCKET_NAME!).file(objectPath);
+
+    await file.save(buffer, {
+      metadata: {
+        contentType: 'image/png',
+        cacheControl: 'public, max-age=31536000, immutable',
+      },
+      resumable: false,
+    });
+  } catch (error) {
+    console.error(`GCS upload failed for ${objectPath}:`, error);
+    throw new Error(
+      `Failed to upload image to GCS bucket ${GCS_BUCKET_NAME}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+async function saveToLocal(buffer: Buffer, subDir: string, fileName: string): Promise<void> {
+  const fs = await import('fs');
+  const path = await import('path');
+  const relativeDir = path.join('images', subDir);
+  const targetDir = path.join(process.cwd(), 'public', relativeDir);
+
+  await fs.promises.mkdir(targetDir, { recursive: true });
+  await fs.promises.writeFile(path.join(targetDir, fileName), buffer);
 }
