@@ -82,6 +82,18 @@ resource "google_cloud_run_v2_service" "app" {
         value = var.notify_secret
       }
 
+      # GCS bucket for generated images
+      env {
+        name  = "GCS_BUCKET_NAME"
+        value = google_storage_bucket.images.name
+      }
+
+      # Base URL for image serving
+      env {
+        name  = "IMAGE_BASE_URL"
+        value = "https://storage.googleapis.com/${google_storage_bucket.images.name}"
+      }
+
       # NEXT_PUBLIC_* (needed at runtime for client hydration)
       env {
         name  = "NEXT_PUBLIC_FIREBASE_API_KEY"

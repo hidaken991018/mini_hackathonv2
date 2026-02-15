@@ -24,6 +24,7 @@ describe('InventoryItem', () => {
 
   const mockOnConsume = jest.fn();
   const mockOnClick = jest.fn();
+  const mockOnDelete = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,6 +35,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={mockItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );
@@ -48,6 +50,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={mockItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );
@@ -64,6 +67,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={mockItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );
@@ -81,6 +85,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={mockItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );
@@ -97,6 +102,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={mockItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
         isConsuming={true}
       />
@@ -116,6 +122,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={expiredItem}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );
@@ -135,6 +142,7 @@ describe('InventoryItem', () => {
       <InventoryItem
         item={itemWithoutUnit}
         onConsume={mockOnConsume}
+        onDelete={mockOnDelete}
         onClick={mockOnClick}
       />
     );

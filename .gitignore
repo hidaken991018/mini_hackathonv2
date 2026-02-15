@@ -186,9 +186,6 @@ dev.err.log
 # Next.js specific
 next-env.d.ts
 
-# Claude Code
-.claude/
-
 # SQLite database (legacy - now using PostgreSQL via Docker)
 *.db
 *.db-journal

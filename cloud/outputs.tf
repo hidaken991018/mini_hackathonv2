@@ -18,3 +18,13 @@ output "artifact_registry" {
   description = "Artifact Registry repository path"
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.app.repository_id}"
 }
+
+output "image_bucket_name" {
+  description = "GCS bucket for recipe images"
+  value       = google_storage_bucket.images.name
+}
+
+output "image_base_url" {
+  description = "Public base URL for recipe images"
+  value       = "https://storage.googleapis.com/${google_storage_bucket.images.name}"
+}

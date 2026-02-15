@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeSourceType } from '@/types';
+import { toFullImageUrl } from '@/lib/image-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       sourceType: recipe.sourceType as RecipeSourceType,
       title: recipe.title,
       description: recipe.description,
-      imageUrl: recipe.imageUrl,
+      imageUrl: toFullImageUrl(recipe.imageUrl),
       cookingTime: recipe.cookingTime,
       servings: recipe.servings,
       createdAt: recipe.createdAt.toISOString(),
@@ -208,7 +209,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       sourceType: recipe.sourceType as RecipeSourceType,
       title: recipe.title,
       description: recipe.description,
-      imageUrl: recipe.imageUrl,
+      imageUrl: toFullImageUrl(recipe.imageUrl),
       cookingTime: recipe.cookingTime,
       servings: recipe.servings,
       createdAt: recipe.createdAt.toISOString(),
