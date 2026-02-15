@@ -345,12 +345,34 @@ export default function RecipesPage() {
         ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <p className="text-gray-500 mb-6">レシピがありません</p>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="w-full max-w-xs py-4 px-6 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors shadow-md"
-            >
-              新しいレシピを作成
-            </button>
+            {filter === 'ai_generated' ? (
+              <button
+                onClick={() => setIsGenerateModalOpen(true)}
+                disabled={isGenerating}
+                className="w-full max-w-xs py-4 px-6 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                    生成中
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    AIで生成
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full max-w-xs py-4 px-6 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors shadow-md"
+              >
+                新しいレシピを作成
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
