@@ -46,7 +46,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
               : 'bg-green-100 text-green-700'
           }`}
         >
-          {recipe.sourceType === 'ai_generated' ? 'AI生成' : '手入力'}
+          {recipe.sourceType === 'ai_generated' ? 'AI生成' : '自分で作成'}
         </span>
         {recipe.matchLabel && (
           <span

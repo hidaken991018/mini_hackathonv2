@@ -376,7 +376,7 @@ export default function ReceiptUploadPanel({
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                <span className="text-sm font-medium">手入力で追加</span>
+                <span className="text-sm font-medium">手動で追加</span>
               </button>
 
               <button
