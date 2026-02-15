@@ -8,6 +8,7 @@ import { getConsumeInfo } from '@/lib/units';
 import ScreenHeader from '@/components/ScreenHeader';
 import InventoryList from '@/components/InventoryList';
 import InventoryEditModal from '@/components/InventoryEditModal';
+import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import MainLayout from '@/components/MainLayout';
 import { InventoryItemWithId } from '@/types';
 import { getFoodCategoryName, FOOD_CATEGORY_NAMES } from '@/lib/expiry-defaults';
@@ -363,6 +364,11 @@ export default function InventoryPage() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={isSaving}
+      />
+
+      <ReceiptUploadPanel
+        onInventoryRegistered={fetchInventories}
+        launcherPositionClassName="bottom-32 right-4"
       />
     </MainLayout>
   );
