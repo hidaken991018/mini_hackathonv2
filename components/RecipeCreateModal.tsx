@@ -244,19 +244,11 @@ export default function RecipeCreateModal({
                 </div>
               </div>
 
-              {/* 材料 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  材料 <span className="text-red-500">*</span>
-                </label>
                 <IngredientInput ingredients={ingredients} onChange={setIngredients} />
               </div>
 
-              {/* 手順 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  作り方 <span className="text-red-500">*</span>
-                </label>
                 <StepInput steps={steps} onChange={setSteps} />
               </div>
             </div>
