@@ -45,7 +45,7 @@ describe('ReceiptUploadPanel', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('カメラで撮影')).not.toBeInTheDocument();
     expect(screen.queryByText('レシートを読み取る')).not.toBeInTheDocument();
-    expect(screen.queryByText('手入力で追加')).not.toBeInTheDocument();
+    expect(screen.queryByText('手動で追加')).not.toBeInTheDocument();
   });
 
   it('+ ボタン押下でアクションシートを開く', () => {
@@ -54,7 +54,7 @@ describe('ReceiptUploadPanel', () => {
 
     expect(screen.getByText('カメラで撮影')).toBeInTheDocument();
     expect(screen.getByText('レシートを読み取る')).toBeInTheDocument();
-    expect(screen.getByText('手入力で追加')).toBeInTheDocument();
+    expect(screen.getByText('手動で追加')).toBeInTheDocument();
   });
 
   it('レシート選択でレシートinputを開く', () => {
@@ -90,7 +90,7 @@ describe('ReceiptUploadPanel', () => {
   it('手入力選択で手動追加モーダルを開く', () => {
     render(<ReceiptUploadPanel />);
     fireEvent.click(screen.getByRole('button', { name: '在庫入力メニューを開く' }));
-    fireEvent.click(screen.getByRole('button', { name: '手入力で追加' }));
+    fireEvent.click(screen.getByRole('button', { name: '手動で追加' }));
     expect(screen.getByText('manual-add-modal')).toBeInTheDocument();
   });
 

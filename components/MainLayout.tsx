@@ -27,12 +27,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <div className="main-container relative z-10 glass shadow-[0_24px_70px_rgba(15,23,42,0.12)]">
         <Sidebar />
         <main className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
-          <div className="flex-1 overflow-y-auto pb-24 md:pb-0">
+          <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
             {children}
           </div>
-          <BottomNav />
         </main>
       </div>
+      {/* BottomNav は main-container の外に配置。glass(backdrop-filter) の影響で fixed がビューポート基準にならない問題を回避 */}
+      <BottomNav />
     </div>
   );
 }

@@ -210,12 +210,9 @@ export default function RecipeSlideModal({
                     </div>
                   </div>
 
-                  {/* 材料 */}
+                  {/* 材料一覧 */}
                   {activeRecipe.ingredients && activeRecipe.ingredients.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-lg font-bold text-gray-900 border-l-4 border-emerald-500 pl-3 mb-4">
-                        材料
-                      </h3>
                       <ul className="space-y-3">
                         {activeRecipe.ingredients.map((ingredient, index) => {
                           // 通知由来(string)とDB由来(RecipeIngredientItem)の両方をサポート
@@ -245,12 +242,9 @@ export default function RecipeSlideModal({
                     </div>
                   )}
 
-                  {/* 作り方 */}
+                  {/* 作り方一覧 */}
                   {activeRecipe.steps && activeRecipe.steps.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-lg font-bold text-gray-900 border-l-4 border-emerald-500 pl-3 mb-4">
-                        作り方
-                      </h3>
                       <ol className="space-y-6">
                         {activeRecipe.steps.map((step) => (
                           <li
@@ -304,8 +298,10 @@ export default function RecipeSlideModal({
                     )}
                   </div>
 
-                  {/* 管理アクション（編集・削除） */}
-                  {recipe?.sourceType === 'user_created' && (onEdit || onDelete) && (
+                  {/* 管理アクション（編集・削除）: 材料または手順が1件以上ある場合のみ表示 */}
+                  {recipe?.sourceType === 'user_created' &&
+                    ((recipe.ingredients?.length ?? 0) > 0 || (recipe?.steps?.length ?? 0) > 0) &&
+                    (onEdit || onDelete) && (
                     <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
                       {onDelete && (
                          <button

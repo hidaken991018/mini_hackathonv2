@@ -5,7 +5,7 @@ import axiosInstance from '@/lib/axios';
 import { InventoryItem } from '@/types';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
-import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import { ExpiryType, getExpiryType, getFoodCategoryName, FOOD_CATEGORY_NAMES } from '@/lib/expiry-defaults';
 import InventoryManualAddModal from './InventoryManualAddModal';
 import Portal from './Portal';
 import Image from 'next/image';
@@ -250,8 +250,9 @@ export default function ReceiptUploadPanel({
 
   return (
     <>
-      <div className={`fixed z-30 flex flex-col items-end gap-2 ${launcherPositionClassName}`}>
-        {analysisFallbackMessage && (
+      {!(showManualModal || showPreview) && (
+        <div className={`fixed z-30 flex flex-col items-end gap-2 ${launcherPositionClassName}`}>
+          {analysisFallbackMessage && (
           <div className="w-72 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 p-3 shadow-md">
             <p className="text-sm">{analysisFallbackMessage}</p>
             <div className="mt-2 flex items-center gap-2">
@@ -290,7 +291,8 @@ export default function ReceiptUploadPanel({
             />
           </svg>
         </button>
-      </div>
+        </div>
+      )}
 
       {showActionSheet && (
         <Portal>
@@ -374,7 +376,7 @@ export default function ReceiptUploadPanel({
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                <span className="text-sm font-medium">手入力で追加</span>
+                <span className="text-sm font-medium">手動で追加</span>
               </button>
 
               <button
@@ -567,6 +569,23 @@ export default function ReceiptUploadPanel({
                             foodName={item.name}
                             compact
                           />
+                        </div>
+
+                        <div className="mt-2">
+                          <label className="block text-gray-500 mb-1 text-xs">カテゴリー</label>
+                          <select
+                            value={item.category ?? getFoodCategoryName(item.name)}
+                            onChange={(e) =>
+                              handleUpdateItem(index, 'category', e.target.value || undefined)
+                            }
+                            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          >
+                            {FOOD_CATEGORY_NAMES.map((name) => (
+                              <option key={name} value={name}>
+                                {name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     ))}

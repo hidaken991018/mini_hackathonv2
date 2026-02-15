@@ -1,12 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axiosInstance from '@/lib/axios';
 import { InventoryItemWithId } from '@/types';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
-import { ExpiryType, getExpiryType } from '@/lib/expiry-defaults';
+import { ExpiryType, getExpiryType, getFoodCategoryName, FOOD_CATEGORY_NAMES } from '@/lib/expiry-defaults';
 import Portal from './Portal';
+
+/** 入力枠タップで日付ピッカーを開く */
+function openDatePicker(inputEl: HTMLInputElement | null) {
+  if (!inputEl) return;
+  try {
+    if (typeof inputEl.showPicker === 'function') {
+      inputEl.showPicker();
+    } else {
+      inputEl.focus();
+    }
+  } catch {
+    inputEl.focus();
+  }
+}
 
 type InventoryManualAddModalProps = {
   isOpen: boolean;
@@ -16,6 +30,7 @@ type InventoryManualAddModalProps = {
 
 type FormState = {
   name: string;
+  category: string;
   quantityValue: string;
   quantityUnit: string;
   expireDate: string;
@@ -28,6 +43,7 @@ type FormState = {
 
 const INITIAL_FORM: FormState = {
   name: '',
+  category: '',
   quantityValue: '',
   quantityUnit: '',
   expireDate: '',
@@ -45,6 +61,7 @@ export default function InventoryManualAddModal({
 }: InventoryManualAddModalProps) {
   const [formData, setFormData] = useState<FormState>(INITIAL_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const purchaseDateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -74,6 +91,7 @@ export default function InventoryManualAddModal({
 
     const payload = {
       name: formData.name.trim(),
+      category: formData.category || undefined,
       quantityValue:
         typeof quantityNumber === 'number' && Number.isFinite(quantityNumber) && quantityNumber > 0
           ? quantityNumber
@@ -144,13 +162,12 @@ export default function InventoryManualAddModal({
   const handleNameChange = (name: string) => {
     setFormData((prev) => {
       const hasDate = Boolean(prev.expireDate || prev.consumeBy);
-      if (hasDate) {
-        return { ...prev, name };
-      }
-
       const detected = getExpiryType(name);
       const nextType: ExpiryType = detected === 'consume_by' ? 'consume_by' : detected === 'freshness' ? 'freshness' : 'best_before';
-      return { ...prev, name, expiryType: nextType };
+      const updates: Partial<FormState> = { name };
+      if (!hasDate) updates.expiryType = nextType;
+      if (!prev.category) updates.category = getFoodCategoryName(name);
+      return { ...prev, ...updates };
     });
   };
 
@@ -266,14 +283,46 @@ export default function InventoryManualAddModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 購入日
               </label>
-              <input
-                type="date"
-                value={formData.purchaseDate}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => openDatePicker(purchaseDateInputRef.current)}
+                onKeyDown={(e) => e.key === 'Enter' && openDatePicker(purchaseDateInputRef.current)}
+                className="min-h-[44px] cursor-pointer"
+              >
+                <input
+                  ref={purchaseDateInputRef}
+                  type="date"
+                  value={formData.purchaseDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, purchaseDate: e.target.value }))
+                  }
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                カテゴリー
+              </label>
+              <select
+                value={formData.category}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, purchaseDate: e.target.value }))
+                  setFormData((prev) => ({ ...prev, category: e.target.value }))
                 }
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+              >
+                <option value="">選択してください</option>
+                {FOOD_CATEGORY_NAMES.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10px] text-gray-400">
+                食材名から自動推定されていますが、変更可能です。
+              </p>
             </div>
 
             <ExpiryDateInput
