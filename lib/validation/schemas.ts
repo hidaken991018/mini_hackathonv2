@@ -126,6 +126,10 @@ export const inventoryUpdateRequestSchema = z
     expireDate: optionalDateStringSchema,
     consumeBy: optionalDateStringSchema,
     purchaseDate: optionalDateStringSchema,
+    category: optionalTrimmedStringSchema.refine(
+      (value) => value === undefined || value === null || value.length <= 50,
+      { message: 'categoryは50文字以下で指定してください' },
+    ),
     note: optionalTrimmedStringSchema.refine(
       (value) => value === undefined || value === null || value.length <= 500,
       { message: 'noteは500文字以下で指定してください' },

@@ -10,9 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -21,6 +24,7 @@
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "@types/uuid": "^10.0.0",

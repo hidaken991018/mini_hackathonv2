@@ -8,6 +8,7 @@ import { getConsumeInfo } from '@/lib/units';
 import ScreenHeader from '@/components/ScreenHeader';
 import InventoryList from '@/components/InventoryList';
 import InventoryEditModal from '@/components/InventoryEditModal';
+import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import MainLayout from '@/components/MainLayout';
 import { InventoryItemWithId } from '@/types';
 import { getFoodCategoryName, FOOD_CATEGORY_NAMES } from '@/lib/expiry-defaults';
@@ -175,9 +176,11 @@ export default function InventoryPage() {
     setIsSaving(true);
     try {
       const res = await axiosInstance.put(`/api/inventories/${id}`, data);
-      if (res.data.success) {
+      if (res.data.success && res.data.data) {
+        // APIレスポンスで状態を更新（購入日などサーバー側の値を確実に反映）
+        const updated = res.data.data;
         setInventories((prev) =>
-          prev.map((inv) => (inv.id === id ? { ...inv, ...data } : inv))
+          prev.map((inv) => (inv.id === id ? { ...inv, ...updated } : inv))
         );
         setSelectedItem(null);
       }
@@ -361,6 +364,11 @@ export default function InventoryPage() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={isSaving}
+      />
+
+      <ReceiptUploadPanel
+        onInventoryRegistered={fetchInventories}
+        launcherPositionClassName="bottom-32 right-4"
       />
     </MainLayout>
   );

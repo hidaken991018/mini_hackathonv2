@@ -309,7 +309,7 @@ export default function RecipesPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
-                {f === 'all' ? 'すべて' : f === 'user_created' ? '手入力' : 'AI生成'}
+                {f === 'all' ? 'すべて' : f === 'user_created' ? '自分で作成' : 'AI生成'}
               </button>
             ))}
           </div>
@@ -344,15 +344,36 @@ export default function RecipesPage() {
         ) : error ? (
           <div className="text-center py-12 text-red-500">{error}</div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            レシピがありません
-            <br />
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="mt-4 text-gray-900 underline"
-            >
-              新しいレシピを作成
-            </button>
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <p className="text-gray-500 mb-6">レシピがありません</p>
+            {filter === 'ai_generated' ? (
+              <button
+                onClick={() => setIsGenerateModalOpen(true)}
+                disabled={isGenerating}
+                className="w-full max-w-xs py-4 px-6 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                    生成中
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    AIで生成
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full max-w-xs py-4 px-6 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors shadow-md"
+              >
+                新しいレシピを作成
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

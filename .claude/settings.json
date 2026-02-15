@@ -3,5 +3,25 @@
     "frontend-design@claude-plugins-official": true,
     "commit-commands@claude-code-plugins": true,
     "playwright@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)",
+      "WebSearch"
+    ]
   }
 }

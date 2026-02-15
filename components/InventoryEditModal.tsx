@@ -1,11 +1,24 @@
 'use client';
 
 import { InventoryItemWithId } from '@/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import UnitSelector from './UnitSelector';
 import ExpiryDateInput from './ExpiryDateInput';
 import { ExpiryType, getExpiryType, FOOD_CATEGORY_NAMES, getFoodCategoryName } from '@/lib/expiry-defaults';
 import Portal from './Portal';
+
+function openDatePicker(inputEl: HTMLInputElement | null) {
+  if (!inputEl) return;
+  try {
+    if (typeof inputEl.showPicker === 'function') {
+      inputEl.showPicker();
+    } else {
+      inputEl.focus();
+    }
+  } catch {
+    inputEl.focus();
+  }
+}
 
 interface InventoryEditModalProps {
   item: InventoryItemWithId | null;
@@ -22,6 +35,7 @@ export default function InventoryEditModal({
   onDelete,
   isSaving,
 }: InventoryEditModalProps) {
+  const purchaseDateInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: '',
     quantityValue: '',
@@ -58,7 +72,8 @@ export default function InventoryEditModal({
         quantityUnit: item.quantityUnit || '',
         expireDate: item.expireDate || '',
         consumeBy: item.consumeBy || '',
-        purchaseDate: item.purchaseDate || '',
+        purchaseDate:
+          item.purchaseDate || item.createdAt?.split('T')[0] || '',
         note: item.note || '',
         isStaple: item.isStaple || false,
         expiryType: detectExpiryType(item),
@@ -208,14 +223,23 @@ export default function InventoryEditModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               購入日
             </label>
-            <input
-              type="date"
-              value={formData.purchaseDate}
-              onChange={(e) =>
-                setFormData({ ...formData, purchaseDate: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openDatePicker(purchaseDateInputRef.current)}
+              onKeyDown={(e) => e.key === 'Enter' && openDatePicker(purchaseDateInputRef.current)}
+              className="min-h-[44px] cursor-pointer"
+            >
+              <input
+                ref={purchaseDateInputRef}
+                type="date"
+                value={formData.purchaseDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, purchaseDate: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+              />
+            </div>
           </div>
 
           <ExpiryDateInput
