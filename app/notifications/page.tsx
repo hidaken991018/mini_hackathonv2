@@ -8,9 +8,10 @@ import BottomNav from '@/components/BottomNav';
 import ReceiptUploadPanel from '@/components/ReceiptUploadPanel';
 import ScreenHeader from '@/components/ScreenHeader';
 import RecipeSlideModal from '@/components/RecipeSlideModal';
+import RecipeCreateModal from '@/components/RecipeCreateModal';
 import NotificationCard from '@/components/NotificationCard';
 import MainLayout from '@/components/MainLayout';
-import { Notification } from '@/types';
+import { Notification, Recipe } from '@/types';
 
 // 在庫アイテムの型（ローカル状態用）
 type LocalInventory = {
@@ -25,6 +26,8 @@ export default function NotificationsPage() {
   const router = useRouter();
   const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
   const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
+  const [recipeForEdit, setRecipeForEdit] = useState<Recipe | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Notifications画面の状態
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -116,6 +119,81 @@ export default function NotificationsPage() {
     );
   };
 
+  // 通知のレシピ編集開始（recipeIdからレシピを取得してモーダル表示）
+  const handleEditByRecipeId = async (recipeId: string) => {
+    if (!user) return;
+    try {
+      const token = await getIdToken();
+      const res = await fetch(`/api/recipes/${recipeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await res.json();
+      if (payload?.success && payload?.data) {
+        setRecipeForEdit(payload.data);
+        setIsEditModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch recipe for edit:', err);
+    }
+  };
+
+  // 通知を削除（レシピは残る）
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!user || !confirm('この通知を一覧から削除しますか？レシピは残ります。')) return;
+    try {
+      await axiosInstance.delete(`/api/notifications/${notificationId}`);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      setSelectedNotificationId(null);
+      setIsEditModalOpen(false);
+      setRecipeForEdit(null);
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  // レシピを削除（レシピ画面からも消える）
+  const handleDeleteRecipe = async (recipeId: string) => {
+    if (!user) return;
+    try {
+      await axiosInstance.delete(`/api/recipes/${recipeId}`);
+      setNotifications((prev) => prev.filter((n) => n.recipeId !== recipeId));
+      setSelectedNotificationId(null);
+      setIsEditModalOpen(false);
+      setRecipeForEdit(null);
+    } catch (err) {
+      console.error('Failed to delete recipe:', err);
+    }
+  };
+
+  // 通知のレシピ更新完了（title/body/recipeをすべて更新）
+  const handleRecipeUpdated = (recipe: Recipe) => {
+    const recipeForNotification = {
+      ingredients: recipe.ingredients.map((ing) => {
+        const q = [ing.quantityValue, ing.quantityUnit].filter(Boolean).join('');
+        return q ? `${ing.name} ${q}`.trim() : ing.name;
+      }),
+      steps: recipe.steps,
+      cookingTime: recipe.cookingTime,
+      servings: recipe.servings,
+      imageUrl: recipe.imageUrl,
+    };
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.recipeId === recipe.id
+          ? {
+              ...n,
+              title: recipe.title,
+              body: recipe.description ?? n.body,
+              recipe: recipeForNotification,
+            }
+          : n
+      )
+    );
+    setRecipeForEdit(null);
+    setIsEditModalOpen(false);
+    setSelectedNotificationId(null);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -160,7 +238,24 @@ export default function NotificationsPage() {
         onClose={() => setSelectedNotificationId(null)}
         onMarkAsRead={handleMarkAsRead}
         onCookComplete={handleCookComplete}
+        onEditByRecipeId={handleEditByRecipeId}
+        onDelete={handleDeleteRecipe}
+        onDeleteNotification={handleDeleteNotification}
       />
+
+      {/* レシピ編集モーダル（通知経由） */}
+      {recipeForEdit && (
+        <RecipeCreateModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setRecipeForEdit(null);
+          }}
+          onSave={handleRecipeUpdated}
+          initialData={recipeForEdit}
+          mode="edit"
+        />
+      )}
     </MainLayout>
   );
 }

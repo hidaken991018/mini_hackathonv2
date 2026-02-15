@@ -12,8 +12,14 @@ interface RecipeSlideModalProps {
   onClose: () => void;
   onMarkAsRead?: (id: string) => void;
   onCookComplete?: (deletedInventoryIds: string[]) => void;
+  /** レシピページ用: フルRecipeを渡す */
   onEdit?: (recipe: Recipe) => void;
+  /** 通知ページ用: recipeIdのみで編集開始（親でレシピ取得） */
+  onEditByRecipeId?: (recipeId: string) => void;
+  /** レシピを削除（レシピ画面・通知画面のサブメニュー用） */
   onDelete?: (recipeId: string) => void;
+  /** 通知を削除（通知画面用・レシピは残る） */
+  onDeleteNotification?: (notificationId: string) => void;
 }
 
 export default function RecipeSlideModal({
@@ -23,17 +29,45 @@ export default function RecipeSlideModal({
   onMarkAsRead,
   onCookComplete,
   onEdit,
+  onEditByRecipeId,
   onDelete,
+  onDeleteNotification,
 }: RecipeSlideModalProps) {
   // 調理機能の状態
   const [showCookConfirm, setShowCookConfirm] = useState(false);
   const [isCooking, setIsCooking] = useState(false);
 
-  // 表示用データの統一
-  const activeRecipe = recipe || notification?.recipe;
+  // 通知経由の場合: recipeIdから最新レシピを取得（レシピ画面の編集が反映される）
+  const [fetchedRecipe, setFetchedRecipe] = useState<Recipe | null>(null);
+  useEffect(() => {
+    if (!notification?.recipeId || recipe) {
+      setFetchedRecipe(null);
+      return;
+    }
+    let cancelled = false;
+    const loadRecipe = async () => {
+      try {
+        const res = await axiosInstance.get(`/api/recipes/${notification.recipeId}`);
+        const payload = res.data;
+        if (payload?.success && payload?.data && !cancelled) {
+          setFetchedRecipe(payload.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch recipe for modal:', err);
+        if (!cancelled) setFetchedRecipe(null);
+      }
+    };
+    loadRecipe();
+    return () => {
+      cancelled = true;
+    };
+  }, [notification?.recipeId, recipe]);
+
+  // 表示用データの統一（recipe > fetchedRecipe > notification.recipe の優先順）
+  const activeRecipe = recipe || fetchedRecipe || notification?.recipe;
   const recipeId = recipe?.id || notification?.recipeId;
-  const title = recipe?.title || notification?.title || '';
-  const bodyText = recipe?.description || notification?.body || '';
+  const title = (recipe || fetchedRecipe)?.title || notification?.title || '';
+  const bodyText = (recipe || fetchedRecipe)?.description || notification?.body || '';
 
   useEffect(() => {
     if (notification || recipe) {
@@ -305,23 +339,54 @@ export default function RecipeSlideModal({
                     )}
                   </div>
 
-                  {/* 管理アクション（編集・削除）- 全レシピで表示 */}
-                  {recipe && (onEdit || onDelete) && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-                      {onDelete && (
-                         <button
-                         onClick={() => onDelete(recipeId!)}
-                         className="flex-1 py-3 border border-red-100 text-red-500 font-bold rounded-xl hover:bg-red-50 transition-colors text-sm"
-                       >
-                         削除
-                       </button>
-                      )}
-                      {onEdit && (
+                  {/* 管理アクション（編集・削除）- recipeIdがあれば表示（レシピページ・通知ページ両方） */}
+                  {(onEdit || onEditByRecipeId || onDelete || onDeleteNotification) && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3">
+                      <div className="flex gap-3">
+                        {/* 通知画面: 通知を削除（主アクション） */}
+                        {notification && onDeleteNotification && (
+                          <button
+                            onClick={() => onDeleteNotification(notification.id)}
+                            className="flex-1 py-3 border border-red-100 text-red-500 font-bold rounded-xl hover:bg-red-50 transition-colors text-sm"
+                          >
+                            通知を削除
+                          </button>
+                        )}
+                        {/* レシピ画面: 削除（主アクション） */}
+                        {!notification && onDelete && recipeId && (
+                          <button
+                            onClick={() => onDelete(recipeId)}
+                            className="flex-1 py-3 border border-red-100 text-red-500 font-bold rounded-xl hover:bg-red-50 transition-colors text-sm"
+                          >
+                            削除
+                          </button>
+                        )}
+                        {(onEdit || onEditByRecipeId) && (
+                          <button
+                            onClick={() => {
+                              if (recipe) {
+                                onEdit?.(recipe as Recipe);
+                              } else if (onEditByRecipeId) {
+                                onEditByRecipeId(recipeId!);
+                              }
+                            }}
+                            className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors text-sm"
+                          >
+                            編集
+                          </button>
+                        )}
+                      </div>
+                      {/* 通知画面: レシピを削除（サブアクション） */}
+                      {notification && onDelete && recipeId && (
                         <button
-                          onClick={() => onEdit(recipe as Recipe)}
-                          className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors text-sm"
+                          onClick={() => {
+                            if (confirm('レシピも完全に削除します。レシピ画面からも消えます。よろしいですか？')) {
+                              onDelete(recipeId);
+                            }
+                          }}
+                          className="py-2 text-xs text-gray-500 hover:text-red-500 transition-colors"
                         >
-                          編集
+                          レシピを削除
                         </button>
                       )}
                     </div>
