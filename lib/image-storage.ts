@@ -36,24 +36,32 @@ export function toFullImageUrl(path: string | null | undefined): string | undefi
   // 先頭の / を正規化して除去
   const normalized = path.startsWith('/') ? path.slice(1) : path;
   if (IMAGE_BASE_URL) {
-    return `${IMAGE_BASE_URL}/${normalized}`;
+    const baseUrl = IMAGE_BASE_URL.replace(/\/+$/, '');
+    return `${baseUrl}/${normalized}`;
   }
   // ローカル: public/ からの相対パス
   return `/${normalized}`;
 }
 
 async function uploadToGCS(buffer: Buffer, objectPath: string): Promise<void> {
-  const { Storage } = await import('@google-cloud/storage');
-  const storage = new Storage();
-  const file = storage.bucket(GCS_BUCKET_NAME!).file(objectPath);
+  try {
+    const { Storage } = await import('@google-cloud/storage');
+    const storage = new Storage();
+    const file = storage.bucket(GCS_BUCKET_NAME!).file(objectPath);
 
-  await file.save(buffer, {
-    metadata: {
-      contentType: 'image/png',
-      cacheControl: 'public, max-age=31536000, immutable',
-    },
-    resumable: false,
-  });
+    await file.save(buffer, {
+      metadata: {
+        contentType: 'image/png',
+        cacheControl: 'public, max-age=31536000, immutable',
+      },
+      resumable: false,
+    });
+  } catch (error) {
+    console.error(`GCS upload failed for ${objectPath}:`, error);
+    throw new Error(
+      `Failed to upload image to GCS bucket ${GCS_BUCKET_NAME}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 async function saveToLocal(buffer: Buffer, subDir: string, fileName: string): Promise<void> {
@@ -62,8 +70,6 @@ async function saveToLocal(buffer: Buffer, subDir: string, fileName: string): Pr
   const relativeDir = path.join('images', subDir);
   const targetDir = path.join(process.cwd(), 'public', relativeDir);
 
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
+  await fs.promises.mkdir(targetDir, { recursive: true });
   await fs.promises.writeFile(path.join(targetDir, fileName), buffer);
 }
