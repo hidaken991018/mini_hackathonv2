@@ -57,4 +57,5 @@ export {
   checkRecipeAvailability,
   calculateRemainingQuantity,
   getConsumeInfo,
+  findMatchingInventory,
 } from './comparator';

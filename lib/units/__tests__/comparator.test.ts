@@ -6,6 +6,7 @@ import {
   compareQuantities,
   checkRecipeAvailability,
   calculateRemainingQuantity,
+  findMatchingInventory,
 } from '../comparator';
 
 describe('compareQuantities', () => {
@@ -275,5 +276,42 @@ describe('calculateRemainingQuantity', () => {
       { value: 100, unit: 'g', name: 'にんじん' }
     );
     expect(result).toBeNull();
+  });
+});
+
+describe('findMatchingInventory', () => {
+  const inventories = [
+    { name: '木綿豆腐', quantityValue: 1, quantityUnit: '丁' },
+    { name: '鶏もも肉', quantityValue: 300, quantityUnit: 'g' },
+    { name: '長ネギ', quantityValue: 2, quantityUnit: '本' },
+    { name: 'にんじん', quantityValue: 3, quantityUnit: '本' },
+  ];
+
+  test('完全一致', () => {
+    expect(findMatchingInventory('木綿豆腐', inventories)?.name).toBe('木綿豆腐');
+  });
+
+  test('双方向部分一致（既存動作）', () => {
+    expect(findMatchingInventory('豆腐', inventories)?.name).toBe('木綿豆腐');
+  });
+
+  test('類似食材グループマッチ: 絹豆腐→木綿豆腐', () => {
+    expect(findMatchingInventory('絹豆腐', inventories)?.name).toBe('木綿豆腐');
+  });
+
+  test('類似食材グループマッチ: 鶏むね肉→鶏もも肉', () => {
+    expect(findMatchingInventory('鶏むね肉', inventories)?.name).toBe('鶏もも肉');
+  });
+
+  test('類似食材グループマッチ: ネギ→長ネギ', () => {
+    expect(findMatchingInventory('ねぎ', inventories)?.name).toBe('長ネギ');
+  });
+
+  test('類似食材グループマッチ: 人参→にんじん', () => {
+    expect(findMatchingInventory('人参', inventories)?.name).toBe('にんじん');
+  });
+
+  test('マッチなし', () => {
+    expect(findMatchingInventory('りんご', inventories)).toBeUndefined();
   });
 });

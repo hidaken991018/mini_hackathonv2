@@ -5,7 +5,7 @@
 import type { QuantityComparisonResult, NormalizedQuantity, IngredientAvailability } from './types';
 import { normalizeQuantity, normalizeUnit, isSameCategory } from './normalizer';
 import { convert, canConvert } from './converter';
-import { BASE_UNITS, CONSUME_AMOUNTS } from './constants';
+import { BASE_UNITS, CONSUME_AMOUNTS, SIMILAR_FOOD_GROUPS } from './constants';
 
 /**
  * 2つの数量を比較する
@@ -180,22 +180,18 @@ export function checkRecipeAvailability(
 }
 
 /**
- * 在庫から食材を検索する（部分一致）
+ * 在庫から食材を検索する（完全一致 → 双方向部分一致 → 類似食材グループマッチ）
  * @param ingredientName 検索する食材名
  * @param inventories 在庫リスト
  * @returns マッチした在庫、見つからない場合はundefined
  */
-function findMatchingInventory(
+export function findMatchingInventory<T extends { name: string }>(
   ingredientName: string,
-  inventories: Array<{
-    name: string;
-    quantityValue: number | null;
-    quantityUnit: string | null;
-  }>
-): typeof inventories[0] | undefined {
+  inventories: T[]
+): T | undefined {
   const lowerIngredient = ingredientName.toLowerCase();
 
-  // 完全一致を優先
+  // 1. 完全一致を優先
   const exactMatch = inventories.find(
     (inv) => inv.name.toLowerCase() === lowerIngredient
   );
@@ -203,12 +199,36 @@ function findMatchingInventory(
     return exactMatch;
   }
 
-  // 部分一致
-  return inventories.find(
+  // 2. 双方向部分一致
+  const partialMatch = inventories.find(
     (inv) =>
       inv.name.toLowerCase().includes(lowerIngredient) ||
       lowerIngredient.includes(inv.name.toLowerCase())
   );
+  if (partialMatch) {
+    return partialMatch;
+  }
+
+  // 3. 類似食材グループマッチ
+  const group = SIMILAR_FOOD_GROUPS.find((g) =>
+    g.some((name) => name.toLowerCase() === lowerIngredient)
+  );
+  if (group) {
+    for (const synonym of group) {
+      const lowerSynonym = synonym.toLowerCase();
+      const groupMatch = inventories.find(
+        (inv) =>
+          inv.name.toLowerCase() === lowerSynonym ||
+          inv.name.toLowerCase().includes(lowerSynonym) ||
+          lowerSynonym.includes(inv.name.toLowerCase())
+      );
+      if (groupMatch) {
+        return groupMatch;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 /**
