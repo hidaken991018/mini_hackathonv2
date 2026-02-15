@@ -9,6 +9,7 @@ import RecipeCard from '@/components/RecipeCard';
 import RecipeCreateModal from '@/components/RecipeCreateModal';
 import AIRecipeGenerateModal from '@/components/AIRecipeGenerateModal';
 import RecipeSlideModal from '@/components/RecipeSlideModal';
+import Portal from '@/components/Portal';
 import MainLayout from '@/components/MainLayout';
 import { Recipe, RecipeListItem, RecipeSourceType } from '@/types';
 
@@ -27,6 +28,7 @@ export default function RecipesPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -117,6 +119,7 @@ export default function RecipesPage() {
 
       setGenerateSuccess('AIレシピを生成しました');
       setIsGenerateModalOpen(false);
+      setTimeout(() => setGenerateSuccess(null), 2500);
 
       const nextFilter = filter === 'user_created' ? 'ai_generated' : filter;
       const nextSearchQuery = searchQuery ? '' : searchQuery;
@@ -196,6 +199,8 @@ export default function RecipesPage() {
     setRecipes((prev) => prev.map((r) => (r.id === recipe.id ? listItem : r)));
     setSelectedRecipe(recipe);
     setIsEditMode(false);
+    setUpdateSuccess('更新しました');
+    setTimeout(() => setUpdateSuccess(null), 2500);
   };
 
   const handleDeleteRecipe = async () => {
@@ -323,13 +328,9 @@ export default function RecipesPage() {
             </select>
           </div>
         </div>
-        {(generateError || generateSuccess) && (
+        {generateError && (
           <div className="mt-3 text-sm">
-            {generateError ? (
-              <p className="text-red-600">{generateError}</p>
-            ) : (
-              <p className="text-emerald-600">{generateSuccess}</p>
-            )}
+            <p className="text-red-600">{generateError}</p>
           </div>
         )}
       </div>
@@ -416,9 +417,9 @@ export default function RecipesPage() {
         />
       )}
 
-      {/* レシピ詳細モーダル (統一コンポーネント) */}
+      {/* レシピ詳細モーダル (編集モード中は非表示にして編集モーダルを前面に) */}
       <RecipeSlideModal
-        recipe={selectedRecipe}
+        recipe={isEditMode ? null : selectedRecipe}
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedRecipe(null);
@@ -434,6 +435,19 @@ export default function RecipesPage() {
         onGenerate={handleGenerateAIRecipe}
         isGenerating={isGenerating}
       />
+
+      {/* 成功トースト（更新・AI生成、Portalでbody直下に描画しモーダルより前面に表示） */}
+      {(updateSuccess || generateSuccess) && (
+        <Portal>
+          <div
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-emerald-600 text-white text-sm font-medium rounded-xl shadow-lg animate-fade-in"
+            role="status"
+            aria-live="polite"
+          >
+            {updateSuccess || generateSuccess}
+          </div>
+        </Portal>
+      )}
 
       <BottomNav />
     </MainLayout >

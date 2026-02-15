@@ -112,30 +112,8 @@ export default function AIRecipeGenerateModal({
               除外する食材
               <span className="text-xs text-gray-400 ml-1">（アレルギー・苦手など）</span>
             </label>
-            <div
-              className="border border-gray-200 rounded-lg p-2 min-h-[42px] flex flex-wrap gap-1.5 cursor-text"
-              onClick={() => inputRef.current?.focus()}
-            >
-              {excludeIngredients.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 rounded-md text-xs font-medium"
-                >
-                  {tag}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeTag(index);
-                    }}
-                    disabled={isGenerating}
-                    className="hover:text-red-900 disabled:opacity-50"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              ))}
+            {/* 入力欄と追加ボタン（モバイルで押しやすい） */}
+            <div className="flex gap-2 mb-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -146,11 +124,43 @@ export default function AIRecipeGenerateModal({
                   if (excludeInput.trim()) addExcludeTag(excludeInput);
                 }}
                 disabled={isGenerating}
-                placeholder={excludeIngredients.length === 0 ? '食材名を入力...' : ''}
-                className="flex-1 min-w-[80px] outline-none text-sm text-gray-700 placeholder-gray-400 disabled:opacity-50"
+                placeholder="食材名を入力..."
+                className="flex-1 min-w-0 rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:opacity-50"
               />
+              <button
+                type="button"
+                onClick={() => addExcludeTag(excludeInput)}
+                disabled={isGenerating || !excludeInput.trim() || excludeIngredients.length >= 20}
+                className="flex-shrink-0 px-4 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
+              >
+                追加
+              </button>
             </div>
-            <p className="mt-1 text-xs text-gray-400">Enterまたはカンマで追加</p>
+            {/* 追加済みタグ一覧（削除ボタン拡大でタップしやすく） */}
+            <div className="border border-gray-200 rounded-lg p-2 min-h-[42px] flex flex-wrap gap-2">
+              {excludeIngredients.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-medium min-h-[36px]"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeTag(index);
+                    }}
+                    disabled={isGenerating}
+                    className="p-1.5 -mr-1 rounded hover:bg-red-100 hover:text-red-900 disabled:opacity-50 touch-manipulation"
+                    aria-label={`${tag}を削除`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
