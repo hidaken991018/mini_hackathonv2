@@ -58,7 +58,8 @@ export default function InventoryEditModal({
         quantityUnit: item.quantityUnit || '',
         expireDate: item.expireDate || '',
         consumeBy: item.consumeBy || '',
-        purchaseDate: item.purchaseDate || '',
+        purchaseDate:
+          item.purchaseDate || item.createdAt?.split('T')[0] || '',
         note: item.note || '',
         isStaple: item.isStaple || false,
         expiryType: detectExpiryType(item),
