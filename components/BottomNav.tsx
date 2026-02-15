@@ -18,7 +18,7 @@ export default function BottomNav() {
   const activeTab = getActiveTab();
 
   return (
-    <nav className="absolute bottom-6 left-4 right-4 glass rounded-full border border-white/40 shadow-2xl z-40 md:hidden">
+    <nav className="fixed bottom-6 left-4 right-4 glass rounded-full border border-white/40 shadow-2xl z-40 md:hidden">
 
       <div className="flex justify-around items-center h-20">
         <Link
