@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeMatchLabel, RecipeSourceType } from '@/types';
 import { checkRecipeAvailability } from '@/lib/units/comparator';
+import { toFullImageUrl } from '@/lib/image-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
         id: recipe.id,
         title: recipe.title,
         description: recipe.description,
-        imageUrl: recipe.imageUrl,
+        imageUrl: toFullImageUrl(recipe.imageUrl),
         cookingTime: recipe.cookingTime,
         sourceType: recipe.sourceType as RecipeSourceType,
         ingredientCount: recipe._count.ingredients,
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
       sourceType: recipe.sourceType as RecipeSourceType,
       title: recipe.title,
       description: recipe.description,
-      imageUrl: recipe.imageUrl,
+      imageUrl: toFullImageUrl(recipe.imageUrl),
       cookingTime: recipe.cookingTime,
       servings: recipe.servings,
       createdAt: recipe.createdAt.toISOString(),
