@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { calculateRemainingQuantity, normalizeUnit } from '@/lib/units';
+import { calculateRemainingQuantity, normalizeUnit, findMatchingInventory } from '@/lib/units';
 import { canUserCookRecipe } from '@/lib/recipe-cook-ownership';
 
 export const dynamic = 'force-dynamic'
@@ -79,27 +79,25 @@ export async function POST(
     const deletedInventoryIds: string[] = [];
     const updatedInventories: { id: string; name: string; remaining: number }[] = [];
 
+    // トランザクション前にユーザーの全在庫を取得（JS側マッチング用）
+    const userInventories = await prisma.inventory.findMany({
+      where: { userId: userId! },
+    });
+
     // トランザクション内で在庫を更新
     await prisma.$transaction(async (tx) => {
       for (const ingredient of recipe.ingredients) {
-        // inventoryIdが設定されている場合はそれを使用
-        let inventory = ingredient.inventoryId
+        // JS側でマッチング（双方向部分一致 + 類似食材グループ対応）
+        const matchedId = ingredient.inventoryId
+          ?? findMatchingInventory(ingredient.name, userInventories)?.id
+          ?? null;
+
+        // トランザクション内でrow lockを取得して最新状態を確認
+        let inventory = matchedId
           ? await tx.inventory.findUnique({
-              where: { id: ingredient.inventoryId },
+              where: { id: matchedId },
             })
           : null;
-
-        // inventoryIdがない場合は名前でマッチング
-        if (!inventory) {
-          inventory = await tx.inventory.findFirst({
-            where: {
-              userId,
-              name: {
-                contains: ingredient.name,
-              },
-            },
-          });
-        }
 
         if (inventory) {
           // 常備品（バター、油、調味料等）は調理時に在庫を減らさない
