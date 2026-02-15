@@ -9,9 +9,26 @@
  * DB上は:
  * - consume_by → consumeBy フィールドに格納
  * - best_before / freshness → expireDate フィールドに格納（ラベルだけ異なる）
+ *
+ * モバイル対応: 入力枠タップで日付ピッカーを開く（showPicker）
  */
 
+import { useRef } from 'react';
 import { ExpiryType, EXPIRY_TYPE_LABELS, getExpiryType } from '@/lib/expiry-defaults';
+
+/** 入力枠タップで日付ピッカーを開く（showPicker 未対応ブラウザではフォーカスのみ） */
+function openDatePicker(inputEl: HTMLInputElement | null) {
+  if (!inputEl) return;
+  try {
+    if (typeof inputEl.showPicker === 'function') {
+      inputEl.showPicker();
+    } else {
+      inputEl.focus();
+    }
+  } catch {
+    inputEl.focus();
+  }
+}
 
 interface ExpiryDateInputProps {
   /** 現在選択されている期限タイプ */
@@ -48,6 +65,8 @@ export default function ExpiryDateInput({
   foodName,
   compact = false,
 }: ExpiryDateInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   // トグルの「もう1つの選択肢」を決定
   const altType = getAlternativeType(foodName);
 
@@ -84,12 +103,21 @@ export default function ExpiryDateInput({
             );
           })}
         </div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => onDateChange(e.target.value)}
-          className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-        />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => openDatePicker(inputRef.current)}
+          onKeyDown={(e) => e.key === 'Enter' && openDatePicker(inputRef.current)}
+          className="min-h-[44px] cursor-pointer"
+        >
+          <input
+            ref={inputRef}
+            type="date"
+            value={date}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="w-full px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent min-h-[44px]"
+          />
+        </div>
       </div>
     );
   }
@@ -117,12 +145,21 @@ export default function ExpiryDateInput({
           );
         })}
       </div>
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => onDateChange(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-      />
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => openDatePicker(inputRef.current)}
+        onKeyDown={(e) => e.key === 'Enter' && openDatePicker(inputRef.current)}
+        className="min-h-[44px] cursor-pointer"
+      >
+        <input
+          ref={inputRef}
+          type="date"
+          value={date}
+          onChange={(e) => onDateChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+        />
+      </div>
     </div>
   );
 }
