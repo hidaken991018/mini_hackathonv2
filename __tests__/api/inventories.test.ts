@@ -15,15 +15,28 @@ describe('在庫API ユーティリティ関数', () => {
     });
 
     it('nullの場合はnullを返す', () => {
+      const formatDate = (d: Date | null) => d ? d.toISOString().split('T')[0] : null;
       const date = null;
-      const formatted = date?.toISOString().split('T')[0] ?? null;
+      const formatted = formatDate(date);
       expect(formatted).toBeNull();
     });
   });
 
   describe('在庫データの変換', () => {
     it('Prismaモデルをレスポンス形式に変換できる', () => {
-      const prismaInventory = {
+      const prismaInventory: {
+        id: string;
+        userId: string;
+        name: string;
+        quantityValue: number;
+        quantityUnit: string;
+        expireDate: Date;
+        consumeBy: Date | null;
+        note: string | null;
+        imageUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      } = {
         id: 'inv-1',
         userId: 'user-1',
         name: '卵',
@@ -89,13 +102,13 @@ describe('在庫API ユーティリティ関数', () => {
 
   describe('削除判定', () => {
     it('新しい数量が0の場合は削除フラグがtrue', () => {
-      const newValue = 0;
+      const newValue: number = 0;
       const shouldDelete = newValue === 0;
       expect(shouldDelete).toBe(true);
     });
 
     it('新しい数量が1以上の場合は削除フラグがfalse', () => {
-      const newValue = 1;
+      const newValue: number = 1;
       const shouldDelete = newValue === 0;
       expect(shouldDelete).toBe(false);
     });
