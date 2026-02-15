@@ -14,6 +14,15 @@ const nextConfig = {
       },
     ];
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/syufy-485423-recipe-images/**',
+      },
+    ],
+  },
   output: 'standalone'
 };
 

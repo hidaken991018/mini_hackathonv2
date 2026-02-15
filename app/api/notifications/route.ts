@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
+import { toFullImageUrl } from '@/lib/image-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       id: notification.id,
       title: notification.title,
       body: notification.body,
-      image: notification.imageUrl,
+      image: toFullImageUrl(notification.imageUrl),
       createdAt: notification.createdAt.toISOString(),
       readAt: notification.readAt ? notification.readAt.toISOString() : null,
       recipeId: notification.recipeId ?? undefined,
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
             })),
             cookingTime: notification.recipe.cookingTime ?? undefined,
             servings: notification.recipe.servings ?? undefined,
-            imageUrl: notification.recipe.imageUrl ?? undefined,
+            imageUrl: toFullImageUrl(notification.recipe.imageUrl),
           }
         : undefined,
     }))

@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 import { createValidationErrorResponse } from '@/lib/validation/error-response';
 import { inventoryUpdateRequestSchema } from '@/lib/validation/schemas';
+import { toFullImageUrl } from '@/lib/image-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export async function GET(
         purchaseDate:
           inventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: inventory.note,
-        imageUrl: inventory.imageUrl,
+        imageUrl: toFullImageUrl(inventory.imageUrl),
         isStaple: inventory.isStaple,
         createdAt: inventory.createdAt.toISOString(),
         updatedAt: inventory.updatedAt.toISOString(),
@@ -146,7 +147,7 @@ export async function PUT(
         purchaseDate:
           updatedInventory.purchaseDate?.toISOString().split('T')[0] ?? null,
         note: updatedInventory.note,
-        imageUrl: updatedInventory.imageUrl,
+        imageUrl: toFullImageUrl(updatedInventory.imageUrl),
         isStaple: updatedInventory.isStaple,
         createdAt: updatedInventory.createdAt.toISOString(),
         updatedAt: updatedInventory.updatedAt.toISOString(),
