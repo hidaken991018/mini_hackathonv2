@@ -176,9 +176,11 @@ export default function InventoryPage() {
     setIsSaving(true);
     try {
       const res = await axiosInstance.put(`/api/inventories/${id}`, data);
-      if (res.data.success) {
+      if (res.data.success && res.data.data) {
+        // APIレスポンスで状態を更新（購入日などサーバー側の値を確実に反映）
+        const updated = res.data.data;
         setInventories((prev) =>
-          prev.map((inv) => (inv.id === id ? { ...inv, ...data } : inv))
+          prev.map((inv) => (inv.id === id ? { ...inv, ...updated } : inv))
         );
         setSelectedItem(null);
       }

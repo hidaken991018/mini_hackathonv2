@@ -123,6 +123,7 @@ export async function PUT(
       ...(body.purchaseDate !== undefined && {
         purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
       }),
+      ...(body.category !== undefined && { category: body.category }),
       ...(body.note !== undefined && { note: body.note }),
       ...(body.isStaple !== undefined && { isStaple: body.isStaple }),
     };
